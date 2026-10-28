@@ -1,0 +1,2850 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="DISPO — real estate disposition OS: live inventory, buyers, follow-up messages and deal tracking in one app.">
+<meta name="theme-color" content="#0e1a2b">
+<title>DISPO · Real Estate OS</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230e1a2b'/%3E%3Ctext x='32' y='44' font-size='34' font-family='Arial' font-weight='bold' fill='%233ec27a' text-anchor='middle'%3ED%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --navy:#0e1a2b; --navy-2:#14263c; --ink:#101c2e; --muted:#6b7c93; --muted-2:#8fa0b4;
+  --line:#e3e9f0; --line-2:#eef2f7; --bg:#f4f7fb; --card:#fff;
+  --green:#0f9d58; --green-bg:#e7f7ee; --green-ink:#0b6b3c;
+  --amber:#b8860b; --amber-bg:#fff6e0; --amber-ink:#8a5c00;
+  --red:#d33f3f; --red-bg:#fdeaea; --red-ink:#a32424;
+  --blue:#1d6fb8; --blue-bg:#e8f1fb; --blue-ink:#155a97;
+  --purple:#6d4aff; --purple-bg:#f0ecff; --purple-ink:#4b2fd0;
+  --grey-bg:#eef1f5; --grey-ink:#5a6a7d;
+  --shadow:0 1px 2px rgba(16,32,56,.06), 0 8px 24px rgba(16,32,56,.06);
+  --shadow-lg:0 12px 32px rgba(16,32,56,.14);
+  --r:14px; --r-sm:10px;
+  --side:238px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select{font-family:inherit;font-size:inherit;color:inherit}
+a{color:var(--blue);text-decoration:none}
+svg{flex:0 0 auto}
+:focus-visible{outline:2px solid #4f8ef7;outline-offset:2px;border-radius:6px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#c9d4e2;border-radius:8px;border:2px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:#aebdd0;background-clip:content-box}
+[hidden]{display:none!important}
+
+/* ── shell ─────────────────────────────────────────── */
+.app{display:flex;min-height:100vh}
+.side{width:var(--side);flex:0 0 var(--side);background:linear-gradient(180deg,var(--navy),var(--navy-2));
+  color:#c8d6e6;padding:18px 12px;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
+.brand{display:flex;gap:10px;align-items:center;padding:2px 8px 16px}
+.logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#2f80ed,#0f9d58);
+  display:grid;place-items:center;font-weight:800;color:#fff;font-size:16px;letter-spacing:-.5px}
+.brand b{color:#fff;font-size:16px;display:block;line-height:1.15;letter-spacing:-.2px}
+.brand span{font-size:10px;color:#8ba1b8;letter-spacing:1px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;cursor:pointer;
+  color:#c8d6e6;font-size:13px;margin-bottom:2px;transition:background .14s,color .14s;border:0;background:none;
+  width:100%;text-align:left;font-weight:500}
+.nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav-item.on{background:#fff;color:var(--navy);font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.nav-item .ic{width:20px;display:grid;place-items:center;opacity:.95}
+.nav-item .count{margin-left:auto;background:rgba(255,255,255,.14);border-radius:20px;padding:1px 8px;
+  font-size:11px;font-variant-numeric:tabular-nums}
+.nav-item.on .count{background:var(--navy);color:#fff}
+.nav-sep{margin:14px 9px 7px;font-size:10px;letter-spacing:1.3px;color:#5f7791;font-weight:800;text-transform:uppercase}
+.side-foot{margin-top:auto;padding:14px 8px 4px;border-top:1px solid rgba(255,255,255,.08);margin-top:18px}
+.sync{font-size:10.5px;color:#8ba1b8;line-height:1.6;display:flex;gap:7px;align-items:flex-start}
+.side .dot{width:8px;height:8px;border-radius:50%;background:#3ec27a;box-shadow:0 0 0 3px rgba(62,194,122,.18);
+  margin-top:4px;flex:0 0 8px}
+.sync b{color:#dbe6f2;font-weight:700}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);padding:12px 22px;display:flex;gap:14px;align-items:center}
+.top h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.3px}
+.top .sub{font-size:11.5px;color:var(--muted);margin-top:1px}
+.top-actions{margin-left:auto;display:flex;gap:9px;align-items:center}
+
+/* search + results */
+.search{position:relative}
+.search input{width:300px;max-width:40vw;padding:9px 36px 9px 12px;border:1px solid var(--line);
+  border-radius:var(--r-sm);background:#fff;outline:none;transition:border-color .14s,box-shadow .14s}
+.search input::placeholder{color:#a9b6c6}
+.search input:focus{border-color:#8fb8e6;box-shadow:0 0 0 3px var(--blue-bg)}
+.search .s-ic{position:absolute;right:11px;top:10px;color:#9aa9bb;pointer-events:none}
+.results{position:absolute;top:44px;right:0;width:420px;max-width:86vw;background:#fff;border:1px solid var(--line);
+  border-radius:12px;box-shadow:var(--shadow-lg);overflow:hidden;z-index:40;max-height:60vh;overflow-y:auto}
+.results .grp{padding:7px 12px 4px;font-size:10px;font-weight:800;letter-spacing:1px;color:var(--muted-2);
+  text-transform:uppercase;background:#fafcfe}
+.results .row{padding:9px 12px;display:flex;gap:10px;align-items:center;cursor:pointer;border-bottom:1px solid var(--line-2)}
+.results .row:hover,.results .row.sel{background:var(--blue-bg)}
+.results .row .t{font-weight:600;font-size:12.8px}
+.results .row .s{font-size:11px;color:var(--muted)}
+.results .empty{padding:22px;text-align:center;color:var(--muted)}
+
+.wrap{padding:20px 22px 64px;max-width:1560px;width:100%}
+
+/* ── cards & kpi ───────────────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;
+  box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--blue)}
+.kpi.g::before{background:var(--green)} .kpi.a::before{background:var(--amber)}
+.kpi.r::before{background:var(--red)} .kpi.p::before{background:var(--purple)}
+.kpi .k{font-size:11.5px;color:var(--muted);font-weight:600}
+.kpi .v{font-size:25px;font-weight:800;letter-spacing:-.7px;margin-top:3px;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:11px;color:var(--muted);margin-top:1px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+  overflow:hidden;margin-bottom:16px}
+.card-h{display:flex;gap:12px;align-items:center;padding:13px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.card-h h3{margin:0;font-size:14.5px;font-weight:800;letter-spacing:-.2px;display:flex;align-items:center;gap:8px}
+.card-h .num{background:var(--grey-bg);color:var(--grey-ink);border-radius:20px;padding:1px 9px;font-size:11.5px;font-weight:800}
+.card-h .hint{font-size:11.5px;color:var(--muted)}
+.card-h .right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.card-b{padding:14px 16px}
+.card-b.tight{padding:0}
+
+/* ── buttons & chips ───────────────────────────────── */
+.btn{border:1px solid var(--line);background:#fff;border-radius:var(--r-sm);padding:7px 12px;cursor:pointer;
+  font-size:12.5px;font-weight:600;color:#33475f;transition:background .13s,border-color .13s,transform .06s;
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{background:#f2f6fb;border-color:#c8d8ea}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn.pri{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn.pri:hover{background:#1b3252;border-color:#1b3252}
+.btn.wa{background:#25d366;border-color:#1fbe5a;color:#06351a}
+.btn.wa:hover{background:#1fbe5a}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{background:var(--grey-bg);color:var(--ink)}
+.btn.sm{padding:5px 9px;font-size:11.5px;border-radius:8px}
+.btn.icon{padding:6px;width:30px;height:30px;justify-content:center}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:2.5px 8px;border-radius:20px;font-size:10.8px;
+  font-weight:700;background:var(--grey-bg);color:var(--grey-ink);white-space:nowrap;line-height:1.5}
+.chip.g{background:var(--green-bg);color:var(--green-ink)}
+.chip.a{background:var(--amber-bg);color:var(--amber-ink)}
+.chip.r{background:var(--red-bg);color:var(--red-ink)}
+.chip.b{background:var(--blue-bg);color:var(--blue-ink)}
+.chip.p{background:var(--purple-bg);color:var(--purple-ink)}
+.chip.sd::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.85;
+  flex:0 0 6px}
+
+/* ── tables ────────────────────────────────────────── */
+.t-scroll{overflow:auto;max-height:70vh}
+table{width:100%;border-collapse:collapse}
+thead th{position:sticky;top:0;background:#f8fafc;z-index:2;text-align:left;font-size:10.5px;
+  letter-spacing:.6px;color:#64778d;font-weight:800;padding:9px 12px;border-bottom:1px solid var(--line);
+  cursor:pointer;white-space:nowrap;text-transform:uppercase;user-select:none}
+thead th:hover{color:var(--navy);background:#f1f6fb}
+thead th .ar{opacity:.35;margin-left:4px;font-size:9px}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--line-2);font-size:12.8px;vertical-align:middle;
+  white-space:nowrap;max-width:380px;overflow:hidden;text-overflow:ellipsis}
+tbody td.wrap{white-space:normal}
+tbody tr:hover{background:#f7fbff}
+tbody tr:last-child td{border-bottom:0}
+.c{text-align:center}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;letter-spacing:-.2px}
+.who b{display:block;font-size:12.8px;font-weight:700}
+.who span{font-size:11px;color:var(--muted-2)}
+
+/* ── property cards ────────────────────────────────── */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(352px,1fr));gap:14px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+  overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .16s,border-color .16s}
+.pcard:hover{box-shadow:var(--shadow-lg);border-color:#d6e2ef}
+.pcard .ph{display:flex;align-items:stretch}
+.pcard .thumb{width:106px;flex:0 0 106px;height:92px;background:linear-gradient(135deg,#dfe8f3,#eef3f9);
+  display:grid;place-items:center;color:#a8b7c8;overflow:hidden}
+.pcard .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.pcard .phb{padding:10px 12px;min-width:0;flex:1}
+.pcard .ad{font-weight:800;font-size:13.2px;line-height:1.32;display:-webkit-box;-webkit-line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden}
+.pcard .meta{font-size:11.5px;color:var(--muted);margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.pcard .meta .sep{color:#c3cedb}
+.pcard .meta.one{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.pcard .chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.pcard .blist{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.pcard.open .blist{max-height:1400px;overflow-y:auto}
+.pcard .blist .inner{border-top:1px solid var(--line)}
+.brow{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 12px;
+  border-bottom:1px solid var(--line-2);font-size:12.4px}
+.brow:hover{background:#f7fbff}
+.brow .nm{min-width:0;overflow:hidden}
+.brow .nm b{font-size:12.4px;font-weight:700}
+.brow .nm .tel{color:var(--muted);font-size:11.5px;display:block}
+.brow .acts{display:flex;gap:4px}
+.pcard .foot{padding:9px 12px;background:#fafcfe;border-top:1px solid var(--line);display:flex;
+  gap:7px;align-items:center;margin-top:auto;flex-wrap:wrap}
+.pcard .foot .right{margin-left:auto;font-size:11px;color:var(--muted)}
+.pcard .more{font-size:11.5px;color:var(--muted);text-align:center;padding:6px}
+
+
+/* ══ BUYER LIST — the Dispo Sheet layout, rebuilt ══════════════ */
+.sheet-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:11px 16px;
+  border-bottom:1px solid var(--line);background:#fbfdff}
+.sheet-tools .spacer{margin-left:auto}
+.sheet-tools .count{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tgl{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#48586b;cursor:pointer;
+  user-select:none;font-weight:600}
+.tgl input{accent-color:var(--green);width:15px;height:15px;cursor:pointer}
+
+.sheet-scroll{overflow:auto;max-height:calc(100vh - 190px);background:#fff}
+table.sheet{border-collapse:separate;border-spacing:0;width:100%;min-width:1500px;table-layout:fixed}
+table.sheet th{background:#f1f5fa;border-bottom:2px solid #dbe4ee;border-right:1px solid #e6ecf3;
+  padding:8px 10px;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:#4a5d73;
+  font-weight:800;position:sticky;top:0;z-index:6;cursor:default;white-space:nowrap;text-align:left}
+table.sheet th:first-child{left:0;z-index:8}
+table.sheet th.act,table.sheet td.act{position:sticky;right:0;z-index:5;background:#fff;
+  box-shadow:-8px 0 12px -8px rgba(16,32,56,.18)}
+table.sheet th.act{background:#eef3f9;z-index:9}
+table.sheet td{border-bottom:1px solid #eef2f7;border-right:1px solid #f2f6fa;padding:6px 10px;
+  font-size:12.4px;vertical-align:middle;background:#fff;overflow:hidden;white-space:nowrap;
+  text-overflow:ellipsis}
+table.sheet tbody tr.br:hover td{background:#f5faff}
+/* excel-style row numbers, frozen */
+td.rn,th.rn{width:46px;text-align:center;color:#9aa9bb;font-size:11px;background:#f8fafc;
+  position:sticky;left:0;z-index:4;font-variant-numeric:tabular-nums}
+th.rn{background:#eef3f9;z-index:9;color:#64778d}
+
+/* property banner — the green row from the original sheet */
+tr.sb td{background:linear-gradient(90deg,#2f9e50,#4cb96a);color:#fff;font-weight:800;font-size:13px;
+  border-bottom:1px solid #268a45;border-right:0;padding:0;position:relative;height:38px}
+tr.sb td .bwrap{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;
+  position:sticky;left:0;width:max-content;min-width:100%}
+tr.sb:hover td{filter:brightness(1.07)}
+tr.sb:hover .bwrap{background:rgba(255,255,255,.10)}
+tr.sb .bwrap{border-radius:8px;transition:background .15s}
+tr.sb .caret{transition:transform .18s;display:inline-flex;opacity:.9}
+tr.sb.open .caret{transform:rotate(90deg)}
+tr.sb .addr{font-size:13px;letter-spacing:-.15px}
+tr.sb .pill{background:rgba(255,255,255,.22);border-radius:20px;padding:1.5px 9px;font-size:10.5px;
+  font-weight:800;letter-spacing:.2px}
+tr.sb .pill.warn{background:rgba(0,0,0,.22)}
+tr.sb .num{margin-left:auto;background:rgba(255,255,255,.22);border-radius:20px;padding:1.5px 10px;
+  font-size:11px;font-weight:800}
+tr.sb.sold td{background:linear-gradient(90deg,#b45309,#d97706)}
+tr.sb.pending td{background:linear-gradient(90deg,#a2700a,#c08b12)}
+tr.sb.off td{background:linear-gradient(90deg,#4b5563,#6b7280)}
+
+/* buyer rows — original status colours */
+tr.br td{background:#fff}
+tr.br td.st{font-weight:800;font-size:11.5px;text-align:center;border-right:1px solid #dfe8f1}
+tr.br.s-Interested td.st{background:#b6d7a8;color:#1d4d16}
+tr.br.s-Undecided td.st{background:#ffe599;color:#6b4c00}
+tr.br.s-NotInterested td.st{background:#e06666;color:#fff}
+tr.br.s-RemoveMe td.st{background:#8e7cc3;color:#fff}
+tr.br.s-NoStatus td.st{background:#e8ecf1;color:#586878}
+tr.br.s-Interested td{background:#f6fbf3}
+tr.br td.act{background:#fff}
+tr.br.s-Undecided td{background:#fffdf3}
+tr.br.s-NotInterested td{background:#fdf5f5}
+tr.br.s-RemoveMe td{background:#f9f7fd}
+tr.br:hover td{background:#eef7ff!important}
+tr.br td.nm{font-weight:700}
+tr.br td.tel{font-family:ui-monospace,Menlo,monospace;font-size:11.8px;color:#155a97}
+tr.br td.em{color:#5b6b7e;font-size:11.5px}
+tr.br td.nt{color:#54657a;font-size:11.8px;white-space:normal;line-height:1.35;max-height:44px}
+tr.br td.act{text-align:right;padding-right:8px}
+tr.br td.act .grp{display:flex;gap:4px;justify-content:flex-end}
+tr.br td.act .btn{padding:3px 5px;font-size:10.5px;min-width:24px;justify-content:center}
+tr.br td.act .grp{gap:3px}
+tr.br td.cid{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:#8a99ab}
+tr.br.repeat td.nm::after{content:"×"attr(data-rows);font-size:9.5px;background:var(--purple-bg);
+  color:var(--purple-ink);border-radius:20px;padding:1px 6px;margin-left:6px;font-weight:800;vertical-align:2px}
+tr.more td{background:#fbfdff;color:var(--muted);font-size:11.5px;text-align:center;font-style:italic}
+tr.nogroup td{border-right:0}
+.sheet-legend{display:flex;gap:14px;flex-wrap:wrap;padding:9px 16px;border-top:1px solid var(--line);
+  background:#fafcfe;font-size:11px;color:var(--muted)}
+.sheet-legend span{display:inline-flex;align-items:center;gap:6px}
+.sheet-legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+/* ══ sheet tools layout v2 ═════════════════════════════ */
+.sheet-tools .jump{min-width:190px;max-width:260px}
+.sheet-tools .sep{width:1px;height:22px;background:var(--line);margin:0 2px}
+.btn.sm.act{background:#eef4fb;border-color:#cfe0f2;color:#155a97;font-weight:700}
+.mini{display:none;font-size:11.5px;color:#41546b;font-weight:700;font-variant-numeric:tabular-nums;gap:9px}
+.mini b{color:var(--ink)}
+.mini i{color:#c3cedb;font-style:normal}
+
+/* ══ full screen sheet ═════════════════════════════════ */
+body.sheet-full .side{display:none}
+body.sheet-full .top{display:none}
+body.sheet-full .wrap{max-width:none;padding:0}
+body.sheet-full .kpis{display:none}
+body.sheet-full #view > .card{margin:0;border:0;border-radius:0;height:100vh;display:flex;flex-direction:column;
+  box-shadow:none;overflow:hidden}
+body.sheet-full .sheet-wrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+body.sheet-full .sheet-scroll{flex:1 1 auto;min-height:0;max-height:none;height:auto}
+body.sheet-full .mini{display:inline-flex}
+body.sheet-full .sheet-legend{padding:7px 16px}
+body.sheet-full #sCount{display:none}
+/* in full screen the columns stretch to the whole width, so notes get room */
+body.sheet-full table.sheet{min-width:0;width:100%}
+body.sheet-full .sheet-tools{border-bottom:1px solid var(--line)}
+body.sheet-full .sheet-tools.sub{position:static}
+body.sheet-full .sheet-tools{padding:9px 16px}
+body.sheet-full #toTop{bottom:22px}
+
+/* sticky property name while scrolling a long group */
+.sheet-wrap{position:relative}
+.sg{position:absolute;top:44px;left:14px;z-index:14;display:none;align-items:center;gap:8px;
+  background:rgba(15,26,43,.92);color:#fff;border-radius:20px;padding:4px 12px 4px 10px;font-size:11.5px;
+  font-weight:800;box-shadow:0 6px 18px rgba(11,23,40,.28);backdrop-filter:blur(6px);
+  animation:fadeUp .18s ease both;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg.on{display:inline-flex}
+.sg .d{width:7px;height:7px;border-radius:50%;background:#3ec27a;flex:0 0 7px}
+
+/* back to top */
+#toTop{position:absolute;right:22px;bottom:64px;z-index:15;display:none;border:1px solid var(--line);
+  background:#fff;color:#25405e;border-radius:24px;padding:8px 13px;font-size:12px;font-weight:800;
+  cursor:pointer;box-shadow:0 8px 22px rgba(16,32,56,.16);align-items:center;gap:6px}
+#toTop.on{display:inline-flex}
+#toTop:hover{background:#f2f7fd;transform:translateY(-1px)}
+
+/* active filter chips */
+.fchips{display:none;gap:7px;flex-wrap:wrap;padding:8px 16px;border-bottom:1px solid var(--line);background:#fffdf6}
+.fchips.on{display:flex}
+.fchip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #f0dfae;color:#7a5800;
+  border-radius:20px;padding:3px 6px 3px 10px;font-size:11.5px;font-weight:700}
+.fchip button{border:0;background:#f7ecd0;color:#7a5800;border-radius:50%;width:17px;height:17px;
+  cursor:pointer;font-size:11px;line-height:1;display:grid;place-items:center}
+.fchip button:hover{background:#efdcb0}
+
+/* repeated values inside one property fade out (less visual noise) */
+td.dup{color:#b3c0ce!important;font-weight:500}
+tr.br td.dup.em,tr.br td.dup.tel{color:#c3cedb!important}
+
+/* keyboard-focused cell */
+td.ed.active{box-shadow:inset 0 0 0 2px #2f80ed!important;background:#eef6ff!important}
+
+/* ══ sheet sync ═══════════════════════════════════════ */
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#c9d4e2;display:inline-block;margin-right:6px;
+  vertical-align:0;box-shadow:0 0 0 3px rgba(16,32,56,.05)}
+.sync-dot.ok{background:#0f9d58;box-shadow:0 0 0 3px rgba(15,157,88,.16)}
+.sync-dot.wait{background:#e0a100;box-shadow:0 0 0 3px rgba(224,161,0,.16);animation:pulseDot 1.4s ease-in-out infinite}
+.sync-dot.err{background:#d33f3f;box-shadow:0 0 0 3px rgba(211,63,63,.16)}
+.card.syncstrip{border-color:#dbe7f5;background:linear-gradient(180deg,#fbfdff,#fff)}
+.card.syncstrip .card-h h3{display:flex;align-items:center;gap:2px}
+.card.syncstrip .syncmeta{display:flex;gap:22px;flex-wrap:wrap;font-size:12px;color:#5b6b7e;padding:12px 18px}
+.card.syncstrip .syncmeta b{color:var(--ink);font-weight:600}
+@keyframes pulseDot{0%,100%{opacity:1}50%{opacity:.45}}
+#modal .syncbox{display:flex;flex-direction:column;gap:12px}
+#modal .syncbox .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#modal .syncbox input[type=url],#modal .syncbox input[type=text]{flex:1;min-width:240px;border:1px solid var(--line);
+  border-radius:9px;padding:9px 11px;font-size:12.5px;font-family:ui-monospace,Menlo,monospace}
+#modal .syncbox .state{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#42546a;
+  background:#f7fafd;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+#modal .syncbox .state b{color:var(--ink)}
+#modal .syncbox .steps{font-size:11.8px;color:#5a6b7e;line-height:1.65;background:#fbfdff;
+  border:1px dashed #d7e3ef;border-radius:10px;padding:10px 12px}
+#modal .syncbox .steps code{background:#eef4fb;border-radius:4px;padding:1px 5px;font-size:11px}
+#modal .syncbox .bar{height:5px;border-radius:4px;background:#e7eef6;overflow:hidden;display:none}
+#modal .syncbox .bar.on{display:block}
+#modal .syncbox .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2f80ed,#0f9d58);
+  transition:width .25s ease}
+.sw{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:#42546a;cursor:pointer}
+.sw input{display:none}
+.sw i{width:38px;height:21px;border-radius:20px;background:#d8e2ec;position:relative;transition:background .18s}
+.sw i::after{content:"";position:absolute;top:2.5px;left:2.5px;width:16px;height:16px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 3px rgba(16,32,56,.25);transition:transform .18s}
+.sw input:checked + i{background:#0f9d58}
+.sw input:checked + i::after{transform:translateX(17px)}
+
+/* ══ 3D layer ═════════════════════════════════════════ */
+.kpi{transform-style:preserve-3d;will-change:transform}
+.kpi.tilt{transition:transform .08s linear, box-shadow .2s;box-shadow:0 10px 28px rgba(16,32,56,.16)}
+.nav-item{transition:background .14s,color .14s,transform .16s,box-shadow .16s}
+.nav-item:hover{transform:perspective(700px) translateZ(6px) translateX(2px);box-shadow:0 8px 18px rgba(0,0,0,.18)}
+.btn:active{box-shadow:inset 0 2px 6px rgba(16,32,56,.16)}
+.pcard:hover{transform:perspective(900px) translateZ(6px) translateY(-2px)}
+tr.br.anim-flip{animation:rowFlip .42s cubic-bezier(.2,.7,.3,1) both}
+@keyframes rowFlip{from{opacity:0;transform:perspective(900px) rotateX(-46deg);transform-origin:top center}
+  to{opacity:1;transform:none}}
+tr.sb.anim-flip3d td{animation:banner3d .5s cubic-bezier(.2,.7,.3,1) both}
+@keyframes banner3d{0%{opacity:0;transform:perspective(900px) rotateX(-58deg) translateZ(-40px);
+  transform-origin:top center}100%{opacity:1;transform:none}}
+
+@media(max-width:900px){
+  body.sheet-full #view > .card{height:auto}
+  .sheet-tools .jump{min-width:0;width:100%;max-width:none}
+  .sg{top:40px;left:8px;font-size:11px}
+}
+
+/* ══ motion layer ══════════════════════════════════════ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes rowIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+@keyframes rowFlash{0%{background:#d8f6e3}100%{background:transparent}}
+@keyframes bannerIn{0%{opacity:0;transform:scaleY(.6);transform-origin:top}
+  60%{transform:scaleY(1.02)}100%{opacity:1;transform:none}}
+@keyframes leadGlow{0%{box-shadow:0 0 0 0 rgba(15,157,88,.55)}100%{box-shadow:0 0 0 14px rgba(15,157,88,0)}}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(26px) scale(.96)}
+  to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+@keyframes backdropIn{from{opacity:0}to{opacity:1}}
+@keyframes modalIn{from{opacity:0;transform:perspective(1000px) rotateX(-16deg) translateY(18px) scale(.96)}
+to{opacity:1;transform:none}}
+@keyframes shine{0%{background-position:-220% 0}55%,100%{background-position:220% 0}}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.08)}100%{transform:scale(1)}}
+
+.kpi{animation:fadeUp .42s cubic-bezier(.2,.7,.3,1) both}
+.kpi:nth-child(2){animation-delay:.05s}.kpi:nth-child(3){animation-delay:.1s}
+.kpi:nth-child(4){animation-delay:.15s}.kpi:nth-child(5){animation-delay:.2s}
+.kpi .v{transition:color .2s}
+.card{animation:fadeUp .38s cubic-bezier(.2,.7,.3,1) both}
+
+/* rows sliding in when a property is opened, and when a row is created */
+tr.br.anim-in{animation:rowIn .28s cubic-bezier(.2,.7,.3,1) both}
+tr.br.anim-new td{animation:rowFlash 1.15s ease-out both}
+tr.sb.anim-new td{animation:bannerIn .34s cubic-bezier(.2,.7,.3,1) both, leadGlow 1.1s ease-out .1s both;
+  z-index:3}
+tr.br.isblank.anim-in td.nm{animation:rowFlash 1.4s ease-out both}
+
+/* modal + toast */
+#modal.on{animation:backdropIn .18s ease both}
+#modal.on .box{animation:modalIn .3s cubic-bezier(.2,.7,.3,1) both}
+#modal .fld input,#modal .fld select,#modal .fld textarea{transition:border-color .15s,box-shadow .15s}
+.toast.on{animation:toastIn .28s cubic-bezier(.2,.7,.3,1) both}
+.saved-pill.bump{animation:bump .42s cubic-bezier(.2,.7,.3,1)}
+
+/* micro-interactions */
+.btn{transition:background .15s,border-color .15s,transform .1s,box-shadow .15s}
+.btn:hover{box-shadow:0 2px 8px rgba(16,32,56,.07)}
+.btn:active{transform:translateY(1px) scale(.985)}
+.nav-item .ic{transition:transform .18s ease}
+.nav-item:hover .ic{transform:translateX(2px)}
+tr.br td{transition:background .16s ease}
+tr.sb .caret{transition:transform .22s cubic-bezier(.2,.7,.3,1)}
+#sAddProp{position:relative;overflow:hidden;box-shadow:0 2px 10px rgba(16,32,56,.18)}
+#sAddProp::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(110deg,transparent 32%,rgba(255,255,255,.3) 50%,transparent 68%);
+  background-size:240% 100%;animation:shine 3.6s ease-in-out infinite}
+#sAddProp:hover{transform:translateY(-1px)}
+.pcard:hover{transform:translateY(-1px)}
+.pcard{transition:box-shadow .16s,border-color .16s,transform .16s}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+
+/* ── editable sheet cells ──────────────────────────── */
+.sheet-tools.sub{background:#f7fbf8;border-top:1px solid var(--line);padding:8px 16px;gap:8px}
+.sheet-tools.sub .note{font-size:11.5px;color:#3d6b52;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+.sheet-tools.sub .note i{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(15,157,88,.15)}
+.saved-pill{font-size:11px;font-weight:800;color:#0b6b3c;background:var(--green-bg);border:1px solid #c6e9d5;
+  border-radius:20px;padding:2px 9px;font-variant-numeric:tabular-nums}
+.saved-pill.dirty{color:#8a5c00;background:var(--amber-bg);border-color:#f2dfae}
+table.sheet td.ed{cursor:cell}
+table.sheet td.ed:hover{box-shadow:inset 0 0 0 1px #9ec3ea}
+table.sheet td.edited{background:#fffbe8!important;box-shadow:inset 2px 0 0 #f0b429}
+table.sheet td.edited:hover{filter:brightness(.99)}
+table.sheet td.editing{padding:0!important;box-shadow:inset 0 0 0 2px #2f80ed;background:#fff!important}
+table.sheet td.editing input.cell,table.sheet td.editing select.cell{width:100%;height:100%;min-height:31px;
+  border:0;outline:0;padding:5px 9px;font:inherit;background:#fff;color:var(--ink);display:block}
+table.sheet td.editing select.cell{font-weight:800}
+tr.br.isnew td.rn{background:#e7f7ee;color:#0b6b3c;font-weight:800;box-shadow:inset 3px 0 0 #0f9d58}
+tr.br.isedited td.rn{box-shadow:inset 3px 0 0 #f0b429}
+tr.br .dot-new{width:7px;height:7px;border-radius:50%;background:#0f9d58;display:inline-block;
+  margin-right:6px;vertical-align:1px}
+/* blank white rows, ready to type into (new leads) */
+tr.br.isblank td{background:#fff;color:#aab8c8}
+tr.br.isblank td.st{background:#f4f6f9;color:#8fa0b4}
+tr.br.isblank td.nm .bhint{color:#b7c3d2;font-weight:600;font-style:italic}
+tr.br.isblank:hover td{background:#f7fbff!important}
+td.flashed{animation:cellSaved .85s cubic-bezier(.2,.7,.3,1) both!important}
+@keyframes cellSaved{0%{box-shadow:inset 0 0 0 2px #0f9d58;background:#dcf8e7}
+  100%{box-shadow:inset 0 0 0 0 rgba(15,157,88,0);background:transparent}}
+tr.addrow td{background:#fbfdff;padding:7px 12px;border-bottom:1px solid #eef2f7}
+tr.addrow .btn{font-size:11px;color:#155a97;border-color:#d7e6f5;background:#f4f9ff}
+tr.addrow .btn:hover{background:#e8f2fd}
+.btn.del{color:#a32424}
+.btn.del:hover{background:var(--red-bg);border-color:#f0c4c4}
+tr.sb .addb{margin-left:8px;background:rgba(255,255,255,.9);border:0;color:#1d6b37;font-weight:800;
+  border-radius:20px;padding:4px 10px;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+tr.sb .addb:hover{background:#fff;transform:translateY(-1px)}
+/* ── modal ─────────────────────────────────────────── */
+#modal{position:fixed;inset:0;background:rgba(11,23,40,.48);display:none;place-items:center;z-index:90;padding:16px}
+#modal.on{display:grid}
+#modal .box{background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(11,23,40,.32);
+  width:min(660px,100%);max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
+#modal .mh{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+#modal .mh b{font-size:15px;font-weight:800}
+#modal .mh .sub{font-size:11.5px;color:var(--muted);font-weight:600}
+#modal .mh .x{margin-left:auto;border:0;background:var(--grey-bg);border-radius:8px;width:30px;height:30px;
+  cursor:pointer;font-size:14px;color:#5a6a7d;display:grid;place-items:center}
+#modal .fbody{padding:16px 18px 6px;overflow:auto}
+#modal .frow{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.fld{display:flex;flex-direction:column;gap:4px;margin-bottom:11px;min-width:0}
+.fld label{font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:#5b6b7e;font-weight:800}
+.fld input,.fld select,.fld textarea{border:1px solid var(--line);border-radius:9px;padding:8px 10px;
+  font-size:13px;background:#fff;width:100%;min-width:0}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:0;border-color:#8fb9e6;
+  box-shadow:0 0 0 3px rgba(47,128,237,.13)}
+.fld.full{grid-column:1/-1}
+#modal .mfoot{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--line);
+  background:#fbfdff}
+#modal .hint{font-size:11.5px;color:var(--muted);margin-right:auto;align-self:center}
+@media(max-width:900px){
+  #modal .frow{grid-template-columns:1fr}
+  .sheet-tools.sub{padding:8px 12px}
+}
+@media(max-width:900px){
+  .sheet-tools{position:static;padding:10px 12px;gap:8px}
+  .sheet-scroll{max-height:none}
+  table.sheet{min-width:1180px}
+  table.sheet th.act,table.sheet td.act{position:static;box-shadow:none}
+  .kpi{padding:10px 12px}
+  .kpi .v{font-size:19px}
+  .kpi .d{display:none}
+  .kpis{gap:9px;grid-template-columns:repeat(2,1fr)}
+  .sheet-tools .input{width:100%!important}
+}
+
+/* ── messages ──────────────────────────────────────── */
+.msg{background:#fbfdff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;
+  transition:border-color .15s,box-shadow .15s}
+.msg:hover{border-color:#d3e1f0;box-shadow:0 2px 10px rgba(16,32,56,.05)}
+.msg.sent{background:#f6faf7;border-color:#cbe9d6}
+.msg .mh{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:7px}
+.msg .mh b{font-size:13.4px;font-weight:800}
+.msg .mh .tel{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--blue-ink);font-weight:700}
+.msg .body{font-size:13px;line-height:1.55;color:#22313f;background:#fff;border:1px dashed #d8e3ef;
+  border-radius:9px;padding:10px 12px}
+.msg.sent .body{border-style:solid;border-color:#dcefe3}
+.msg .macts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.msg .macts .right{margin-left:auto}
+.fgroup{margin-bottom:16px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.fgroup .fg-h{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,#0f9d58,#3ec27a);
+  color:#fff;padding:10px 14px;font-weight:800;font-size:13.2px;cursor:pointer;user-select:none}
+.fgroup .fg-h:hover{filter:brightness(1.03)}
+.fgroup .fg-h .n{margin-left:auto;background:rgba(255,255,255,.24);border-radius:20px;padding:2px 10px;font-size:11.5px}
+.fgroup .fg-h .caret{transition:transform .18s}
+.fgroup.open .fg-h .caret{transform:rotate(90deg)}
+.fgroup .fg-body{display:none;padding:12px}
+.fgroup.open .fg-body{display:block}
+.note{background:var(--amber-bg);border:1px solid #f4e2b6;color:var(--amber-ink);border-radius:11px;
+  padding:10px 13px;font-size:12.5px;display:flex;gap:9px;align-items:flex-start}
+.empty{padding:34px 18px;text-align:center;color:var(--muted);font-size:13px}
+.empty b{display:block;color:var(--ink);margin-bottom:3px;font-size:13.5px}
+
+/* ── misc ──────────────────────────────────────────── */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--navy);
+  color:#fff;padding:11px 18px;border-radius:11px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);
+  transition:transform .25s,opacity .25s;z-index:99;opacity:0;pointer-events:none;max-width:90vw}
+.toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+.seg{display:inline-flex;background:#eef3f9;border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:6px 11px;border-radius:8px;cursor:pointer;font-size:12px;
+  font-weight:700;color:#5b6b7e;transition:background .13s,color .13s}
+.seg button:hover{color:var(--navy)}
+.seg button.on{background:#fff;color:var(--navy);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.seg button .n{opacity:.55;margin-left:5px;font-weight:700;font-size:11px}
+.input{padding:8px 11px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:12.5px;outline:none;
+  background:#fff;transition:border-color .13s,box-shadow .13s}
+.input:focus{border-color:#8fb8e6;box-shadow:0 0 0 3px var(--blue-bg)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.progress{height:5px;background:var(--line-2);border-radius:4px;overflow:hidden;width:120px}
+.progress span{display:block;height:100%;background:var(--green);border-radius:4px;transition:width .3s}
+.loading{padding:60px;text-align:center;color:var(--muted)}
+.spin{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--blue);border-radius:50%;
+  margin:0 auto 12px;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(max-width:1100px){.grid2{grid-template-columns:1fr}}
+@media(max-width:860px){
+  .side{position:fixed;left:0;top:0;height:100vh;transform:translateX(-100%);z-index:60;
+    transition:transform .22s ease;box-shadow:12px 0 40px rgba(0,0,0,.25)}
+  .side.open{transform:translateX(0)}
+  #menuBtn{display:inline-flex!important}
+  .search input{width:150px}
+  .wrap{padding:14px 12px 60px}
+  .top{padding:10px 12px}
+  .top h1{font-size:16px}
+  .kpi .v{font-size:21px}
+  .pgrid{grid-template-columns:1fr}
+  .brow{grid-template-columns:1fr auto}
+  .results{width:min(92vw,420px);right:auto;left:0}
+}
+#scrim{position:fixed;inset:0;background:rgba(8,20,35,.42);z-index:55;display:none}
+#scrim.on{display:block}
+@media print{.side,.top,.card-h .right,.btn{display:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side">
+    <div class="brand">
+      <div class="logo">D</div>
+      <div><b>DISPO</b><span>REAL ESTATE OS</span></div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="side-foot">
+      <div class="sync"><span class="dot"></span>
+        <div>Site synced<br><b id="synced">—</b></div>
+      </div>
+      <button class="btn sm" id="refreshBtn" style="width:100%;margin-top:11px;background:#1f3b57;
+        color:#fff;border-color:#27496b;justify-content:center">Refresh from site</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <button class="btn icon" id="menuBtn" style="display:none" aria-label="Menu">☰</button>
+      <div>
+        <h1 id="ttl">Today</h1>
+        <div class="sub" id="stl">Start here</div>
+      </div>
+      <div class="top-actions">
+        <div class="search">
+          <input id="q" placeholder="Search address, buyer, phone…  ( / )" aria-label="Search">
+          <span class="s-ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/>
+            <path d="m20 20-4.3-4.3"/></svg></span>
+          <div class="results" id="results" hidden></div>
+        </div>
+      </div>
+    </header>
+    <main class="wrap" id="view"><div class="loading"><div class="spin"></div>Loading workspace…</div></main>
+  </div>
+</div>
+<div id="scrim"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>window.DISPO_DATA = __DATA__;</script>
+<script>
+"use strict";
+/* ══════════════════════════════════════════════════════════════
+   DISPO web app — English build
+   ══════════════════════════════════════════════════════════════ */
+const D = window.DISPO_DATA || {kpi:{},props:[],inventory:[],followups:[],contacts:[],closed:[],changes:[],issues:[],today:{}};
+const K = D.kpi;
+const $  = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+
+/* ── helpers ───────────────────────────────────────── */
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = n => (n==null||n==='') ? '—' : '$'+Number(n).toLocaleString('en-US');
+const num = n => Number(n||0).toLocaleString('en-US');
+const digits = p => String(p||'').replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
+const waLink = p => 'https://wa.me/1'+digits(p);
+const dAgo = s => { if(!s) return null; const t=Date.parse(s); if(isNaN(t)) return null;
+  return Math.round((Date.parse(K.checked||new Date().toISOString().slice(0,10))-t)/86400000); };
+const fmtDate = s => s ? s : '—';
+
+const SVG = (d,sz=15) => `<svg viewBox="0 0 24 24" width="${sz}" height="${sz}" fill="none" stroke="currentColor"
+  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const IC = {
+  today: SVG('<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/>'),
+  home: SVG('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.8V21h14V9.8"/>'),
+  mail: SVG('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>'),
+  users: SVG('<circle cx="9" cy="8" r="3.2"/><path d="M2.5 21c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M17 11a3 3 0 1 0 0-6"/><path d="M18 15.5c2.2.6 3.5 2.2 3.5 5.5"/>'),
+  globe: SVG('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/>'),
+  handshake: SVG('<path d="M3 13l4-4 4 3 3-3 4 4"/><path d="M7 17l3 3 5-5"/><path d="M14 20l6-6"/>'),
+  sync: SVG('<path d="M21 12a9 9 0 0 1-15.5 6.2"/><path d="M3 12a9 9 0 0 1 15.5-6.2"/><path d="M17 3v4h-4M7 21v-4h4"/>'),
+  warn: SVG('<path d="M12 3 2.5 20h19L12 3z"/><path d="M12 9v5M12 17.5v.5"/>'),
+  phone: SVG('<path d="M6 3h3l2 5-2.5 1.5a11 11 0 0 0 5 5L15 12l5 2v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4 6.2 2 2 0 0 1 6 3z"/>'),
+  copy: SVG('<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>'),
+  ext: SVG('<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"/>'),
+  wa: SVG('<path d="M20 12a8 8 0 0 1-11.8 7L4 20l1.1-4A8 8 0 1 1 20 12z"/><path d="M8.5 9.5c0 3 2 5 5 5l.8-1.2-1.7-.8-.8.7c-.9-.4-1.6-1.1-2-2l.7-.8-.8-1.7L8.5 9.5z"/>'),
+  check: SVG('<path d="m4 12 5 5L20 6"/>'),
+  caret: SVG('<path d="m9 6 6 6-6 6"/>'),
+  download: SVG('<path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 21h16"/>'),
+  building: SVG('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/>'),
+  user: SVG('<circle cx="12" cy="8" r="3.5"/><path d="M4.5 21c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/>'),
+  sheet: SVG('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 4v16M15 4v16"/>'),
+  filter: SVG('<path d="M3 5h18l-7 8v6l-4 2v-8L3 5z"/>'),
+  expand: SVG('<path d="M8 3v4H4"/><path d="M16 3v4h4"/><path d="M8 21v-4H4"/><path d="M16 21v-4h4"/>'),
+  plus: SVG('<path d="M12 5v14M5 12h14"/>'),
+  maximize: SVG('<path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>'),
+  cloud: SVG('<path d="M7 18a4 4 0 0 1 .6-7.96A5.5 5.5 0 0 1 18 9.5a3.5 3.5 0 0 1 .5 6.96"/><path d="M12 12v7"/><path d="m9 16 3-3 3 3"/>'),
+  minimize: SVG('<path d="M9 4v5H4"/><path d="M15 4v5h5"/><path d="M9 20v-5H4"/><path d="M15 20v-5h5"/>'),
+  trash: SVG('<path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/>'),
+  edit: SVG('<path d="M4 20h4L20 8l-4-4L4 16v4z"/>'),
+  upload: SVG('<path d="M12 21V9"/><path d="m7 13 5-5 5 5"/><path d="M4 3h16"/>'),
+};
+
+/* ── local state (marking work done) ───────────────── */
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem('dispo:'+k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem('dispo:'+k, JSON.stringify(v)); }catch(e){} },
+};
+let SENT = new Set(store.get('sent', []));
+let DONE = new Set(store.get('done', []));
+const saveSent = () => store.set('sent', [...SENT]);
+const saveDone = () => store.set('done', [...DONE]);
+
+/* ══════════════════ BUYER-LIST EDIT ENGINE ══════════════════════════════════
+   Every change (cell edit, new buyer row, new property, deleted row) is saved
+   in this browser under `dispo:sheet_edits` and re-applied on top of data.json
+   at boot. Use "Export edits" to move the work to another device / into the
+   rebuilt app. Nothing here ever touches the original Dispo Sheet.
+   ═════════════════════════════════════════════════════════════════════════ */
+const BUYER_STATUSES = ['Interested','Undecided','Not Interested','Remove Me','No Status'];
+/* the four sources used on the sheet */
+const SRC_OPTIONS = ['Facebook','Email','Text','Dispo Genius'];
+/* sheet order inside every property: interested first … not interested last */
+const STATUS_RANK = {'Interested':0, 'Undecided':1, 'No Status':2, 'Remove Me':3, 'Not Interested':4};
+function srcNorm(v){
+  const s0 = String(v == null ? '' : v).trim();
+  if(!s0) return '';
+  const t = s0.toLowerCase();
+  if(t === 'source') return '';                                   // stray header text
+  if(/dip?o|genius|genuis/.test(t)) return 'Dispo Genius';
+  if(/face|\bfb\b|meta|insta/.test(t)) return 'Facebook';
+  if(/text|sms/.test(t)) return 'Text';
+  if(/mail/.test(t)) return 'Email';
+  return s0;                                                      // keep anything unusual
+}
+const PROP_STATUSES  = ['Available','Pending','Sold','Off-market'];
+const EDIT_FIELDS = ['status','source','offer','earnest','type','name','phone','email','last','notes'];
+const FIELD_LABEL = {status:'Status', source:'Source', offer:'Offer', earnest:'Earnest', type:'Type',
+  name:'Name', phone:'Phone', email:'Email', last:'Last touch', notes:'Notes'};
+const EDITS_KEY = 'sheet_edits';
+const emptyEdits = () => ({v:1, ov:{}, del:[], added:[], props:[], seq:0});
+let D0 = null;          // pristine copy of the property data, taken once at boot
+let EDITS = store.get(EDITS_KEY, null) || (window.__SEED_EDITS__ ? JSON.parse(JSON.stringify(window.__SEED_EDITS__)) : emptyEdits());
+if(!EDITS.ov) EDITS = emptyEdits();
+EDITS.del = EDITS.del || []; EDITS.added = EDITS.added || []; EDITS.props = EDITS.props || []; EDITS.seq = EDITS.seq || 0;
+EDITS.ts = EDITS.ts || {};      // when each key was last changed here (ISO)
+EDITS.sent = EDITS.sent || {};  // key -> timestamp already accepted by the sheet
+const saveEdits = () => store.set(EDITS_KEY, EDITS);
+const nowIso = () => new Date().toISOString();
+const touch = key => { EDITS.ts = EDITS.ts || {}; EDITS.ts[key] = nowIso();
+  if(typeof syncKick === 'function') syncKick(); };   // every local change nudges the sheet
+const editsCount = () => Object.keys(EDITS.ov).length + EDITS.del.length + EDITS.added.length + EDITS.props.length;
+
+let BMAP = new Map();   // buyer key -> buyer object
+
+function applyPatch(b, patch){
+  if(patch.source !== undefined) patch.source = srcNorm(patch.source);
+  Object.assign(b, patch);
+  if(patch.phone !== undefined) b.raw = digits(patch.phone);
+  if(patch.offer !== undefined){
+    const n = Number(String(patch.offer).replace(/[^\d]/g,''));
+    b.offer = n || null; b.offerTxt = String(patch.offer||'');
+  }
+}
+function applySheetEdits(){
+  // 0. always start from the pristine data so this can run as often as we like
+  if(D0) D.props = JSON.parse(JSON.stringify(D0));
+  // 1. properties added by the user
+  EDITS.props.forEach(np => {
+    if(D.props.some(p => String(p.row) === String(np.row))) return;
+    D.props.push({row:np.row, address:np.address, status:np.status||'Off-market',
+      price:Number(String(np.price||'').replace(/[^\d]/g,''))||null, buyers:[], n:0, interested:0,
+      last:'', link:'', _new:true});
+  });
+  // 1b. the newest lead always sits at the top of the sheet
+  if(EDITS.props.length){
+    const order = EDITS.props.slice().reverse().map(r => String(r.row));
+    const byRow = new Map(D.props.map(p => [String(p.row), p]));
+    const fresh = order.map(r => byRow.get(r)).filter(Boolean);
+    const rest  = D.props.filter(p => order.indexOf(String(p.row)) === -1);
+    D.props = fresh.concat(rest);
+  }
+  // 2. stable keys (computed from the pristine data order, so they never shift)
+  D.props.forEach(p => p.buyers.forEach((b,i) => { b._k = p.row + '|' + i + '|' + (b.id||''); }));
+  // 3. buyer rows added by the user
+  EDITS.added.forEach(a => {
+    const p = D.props.find(x => String(x.row) === String(a.propRow));
+    if(!p) return;
+    const b = {status:'No Status', source:'', offer:null, offerTxt:'', earnest:'', type:'',
+      name:'', phone:'', email:'', last:'', notes:'', id:'NEW', rows:1, raw:'', _k:a.key, _new:true};
+    applyPatch(b, a.data || {});
+    p.buyers.unshift(b);          // newest row first, so it is never hidden by the 50-row cap
+  });
+  // 4. cell overrides
+  BMAP = new Map();
+  D.props.forEach(p => p.buyers.forEach(b => { b._p = p; BMAP.set(b._k, b); }));
+  Object.entries(EDITS.ov).forEach(([k, patch]) => {
+    const b = BMAP.get(k); if(!b) return;
+    applyPatch(b, patch); b._edited = true;
+  });
+  // 4b. every source on the sheet is one of the four
+  D.props.forEach(p => p.buyers.forEach(b => { b.source = srcNorm(b.source); }));
+  // 5. deleted rows
+  const gone = new Set(EDITS.del);
+  D.props.forEach(p => { p.buyers = p.buyers.filter(b => !gone.has(b._k)); });
+  // 6. the site snapshot wins over the sheet, every time
+  overlaySite();
+  recountSheet();
+}
+function recountSheet(){
+  BMAP = new Map();
+  D.props.forEach(p => {
+    p.buyers.forEach(b => {
+      b._p = p; BMAP.set(b._k, b);
+      // a row with no name, phone or email is a blank placeholder, never a reply
+      b._blank = !String(b.name||'').trim() && !String(b.phone||'').trim() && !String(b.email||'').trim();
+    });
+    const real = p.buyers.filter(b => !b._blank);
+    p.n = real.length;
+    p.interested = real.filter(b => b.status === 'Interested').length;
+    const lasts = real.map(b => b.last).filter(Boolean).sort();
+    p.last = lasts.length ? lasts[lasts.length-1] : p.last || '';
+  });
+  K.buyers = D.props.reduce((a,p) => a + p.buyers.filter(b => !b._blank).length, 0);
+  const navBadge = $('.nav-item[data-go="buyerlist"] .count');
+  if(navBadge) navBadge.textContent = num(K.buyers);
+}
+const findBuyer = k => BMAP.get(k);
+/* the four sources, plus the row's current value when it is something else */
+function srcSelectOptions(cur){
+  const out = SRC_OPTIONS.slice();
+  if(cur && !out.includes(cur)) out.push(cur);
+  return out;
+}
+const statusCounts = () => {
+  const c = {};
+  D.props.forEach(p => p.buyers.forEach(b => { if(!b._blank) c[b.status] = (c[b.status]||0)+1; }));
+  return c;
+};
+const blankRowsOf = p => p.buyers.filter(b => b._blank);
+function lastDate(){ return K.checked || new Date().toISOString().slice(0,10); }
+function nextSeq(){ EDITS.seq = (EDITS.seq||0) + 1; return EDITS.seq; }
+
+/* ── inline cell editing ───────────────────────────── */
+function startEdit(td){
+  if(!td || td.querySelector('.cell')) return;
+  const tr = td.closest('tr.br'); if(!tr) return;
+  const bk = tr.dataset.bk, k = td.dataset.k;
+  const b = findBuyer(bk); if(!b || !k) return;
+  const cur = k === 'offer' ? String(b.offerTxt || (b.offer ? b.offer : '')) : String(b[k] == null ? '' : b[k]);
+  let inp;
+  if(k === 'status' || k === 'source'){
+    inp = document.createElement('select'); inp.className = 'cell';
+    const opts = k === 'status' ? BUYER_STATUSES : srcSelectOptions(b.source);
+    inp.innerHTML = (k === 'source' ? '<option value="">—</option>' : '') +
+      opts.map(v => `<option value="${esc(v)}"${v === b[k] ? ' selected' : ''}>${esc(v)}</option>`).join('');
+  } else {
+    inp = document.createElement('input'); inp.className = 'cell'; inp.value = cur;
+    inp.placeholder = k === 'phone' ? '(404) 555-1234' : k === 'last' ? 'YYYY-MM-DD' : '';
+  }
+  td.classList.add('editing'); td.innerHTML = ''; td.appendChild(inp);
+  inp.focus(); if(inp.select) inp.select();
+  let done = false;
+  const finish = keep => {
+    if(done) return; done = true;
+    const nv = String(inp.value).trim();
+    td.classList.remove('editing');
+    if(keep && nv !== cur) commitCell(bk, k, nv); else renderSheet();
+  };
+  inp.addEventListener('keydown', e => {
+    if(e.key === 'Enter'){ e.preventDefault(); finish(true); }
+    else if(e.key === 'Escape'){ e.preventDefault(); finish(false); }
+    else if(e.key === 'Tab'){ e.preventDefault(); finish(true); }
+  });
+  inp.addEventListener('blur', () => finish(true));
+  if(k === 'status' || k === 'source') inp.addEventListener('change', () => finish(true));
+}
+function commitCell(bk, k, v){
+  const b = findBuyer(bk); if(!b) return;
+  EDITS.ov[bk] = EDITS.ov[bk] || {};
+  EDITS.ov[bk][k] = v; touch(bk);
+  applyPatch(b, {[k]: v}); b._edited = true;
+  saveEdits(); recountSheet(); renderSheet(); paintSheetNumbers();
+  const cell = document.querySelector(`#sBody tr[data-bk="${String(bk).replace(/"/g,'\\"')}"] td[data-k="${k}"]`);
+  if(cell){
+    cell.classList.add('flashed');
+    setTimeout(() => cell.classList.remove('flashed'), 900);
+  }
+  toast(FIELD_LABEL[k] + ' updated and saved');
+}
+
+/* ── add / delete rows ─────────────────────────────── */
+function addBuyer(propRow, data){
+  const key = 'new' + nextSeq();
+  EDITS.added.push({key, propRow, data}); touch(key);
+  saveEdits(); applySheetEdits();
+  SHEET.open.add(String(propRow));
+  SHEET.animKey = String(propRow);
+  renderSheet(); paintSheetNumbers();
+  toast('Buyer row added');
+}
+/* a new lead = a property banner + blank white rows to type buyers into */
+function addLead(rec, nRows){
+  const row = 'n' + nextSeq();
+  EDITS.props.push({row, address:rec.address, status:rec.status, price:rec.price});
+  for(let i = 0; i < nRows; i++){
+    const k = 'n' + nextSeq();
+    EDITS.added.push({key:k, propRow:row, data:{id:'NEW'}});
+    touch(k);
+  }
+  saveEdits(); applySheetEdits();
+  SHEET.open = new Set([String(row)]);
+  SHEET.animKey = String(row);
+  renderSheet(); paintSheetNumbers(); renderSeg();
+  const sc = $('#sheetScroll'); if(sc) sc.scrollTo({top:0, behavior:'smooth'});
+  // open the first blank cell so he can start typing straight away (after the modal closes)
+  setTimeout(() => {
+    const first = $('#sBody tr.br.isblank td[data-k="name"]');
+    if(first){ first.scrollIntoView({block:'center'}); startEdit(first); }
+  }, 90);
+  toast('Lead added — ' + nRows + ' blank rows ready');
+}
+function addBlankRows(propRow, n){
+  for(let i = 0; i < n; i++){
+    const k = 'n' + nextSeq();
+    EDITS.added.push({key:k, propRow:String(propRow), data:{id:'NEW'}});
+    touch(k);
+  }
+  saveEdits(); applySheetEdits();
+  SHEET.open.add(String(propRow));
+  SHEET.animKey = String(propRow);
+  renderSheet(); paintSheetNumbers();
+  toast(n + (n === 1 ? ' blank row added' : ' blank rows added'));
+}
+function deleteRow(bk){
+  const b = findBuyer(bk); if(!b) return;
+  const label = b.name || b.phone || 'this row';
+  ask(`Delete the buyer row for ${label}?`, () => {
+    const wasNew = EDITS.added.some(a => a.key === bk);
+    EDITS.added = EDITS.added.filter(a => a.key !== bk);
+    delete EDITS.ov[bk];
+    if(!wasNew){ EDITS.del.push(bk); touch(bk); }
+    saveEdits(); applySheetEdits();
+    renderSheet(); paintSheetNumbers(); renderSeg();
+    toast('Row deleted');
+  });
+}
+
+/* ── modal + confirm ───────────────────────────────── */
+function modalHost(){
+  let m = $('#modal');
+  if(!m){ document.body.insertAdjacentHTML('beforeend', '<div id="modal"></div>'); m = $('#modal'); }
+  return m;
+}
+function closeModal(){ const m = $('#modal'); if(m){ m.classList.remove('on'); m.innerHTML = ''; } }
+function openModal(title, sub, bodyHtml, footHtml){
+  const m = modalHost();
+  m.innerHTML = `<div class="box" role="dialog" aria-modal="true">
+    <div class="mh"><b>${title}</b>${sub ? `<span class="sub">${sub}</span>` : ''}
+      <button class="x" id="mX" title="Close">✕</button></div>
+    <div class="fbody">${bodyHtml}</div>
+    <div class="mfoot">${footHtml}</div></div>`;
+  m.classList.add('on');
+  $('#mX').onclick = closeModal;
+  m.onclick = e => { if(e.target === m) closeModal(); };
+  document.addEventListener('keydown', escClose, {once:true});
+  return m;
+}
+function escClose(e){ if(e.key === 'Escape') closeModal(); }
+function ask(msg, onYes){
+  const m = openModal('Please confirm', '', `<p style="margin:0 0 8px;font-size:13.5px;color:#33475e">${esc(msg)}</p>`,
+    `<button class="btn" id="mNo">Cancel</button><button class="btn pri" id="mYes">Yes, continue</button>`);
+  m.querySelector('#mNo').onclick = closeModal;
+  m.querySelector('#mYes').onclick = () => { closeModal(); onYes(); };
+}
+const typeOptions = () => {
+  const seen = new Set();
+  D.props.forEach(p => p.buyers.forEach(b => { if(b.type) seen.add(b.type); }));
+  return [...seen].sort();
+};
+function openBuyerForm(propRow){
+  const sel = propRow != null ? String(propRow) : (D.props[0] ? String(D.props[0].row) : '');
+  const props = D.props.slice().sort((a,b) => String(a.address).localeCompare(String(b.address)));
+  const options = props.map(p => `<option value="${esc(String(p.row))}"${String(p.row) === sel ? ' selected' : ''}>${esc(p.address)} <span>(${p.buyers.length})</span></option>`).join('');
+  const body = `<div class="frow">
+      <div class="fld full"><label>Property</label><select id="fProp">${options}</select></div>
+      <div class="fld"><label>Buyer status</label><select id="fStatus">
+        ${BUYER_STATUSES.map(s => `<option${s === 'Interested' ? ' selected' : ''}>${s}</option>`).join('')}</select></div>
+      <div class="fld"><label>Source</label><select id="fSource">
+        <option value="">—</option>
+        ${SRC_OPTIONS.map(v => `<option${v === 'Facebook' ? ' selected' : ''}>${v}</option>`).join('')}</select></div>
+      <div class="fld"><label>Name</label><input id="fName" placeholder="Full name"></div>
+      <div class="fld"><label>Phone number</label><input id="fPhone" placeholder="(404) 555-1234" inputmode="tel"></div>
+      <div class="fld"><label>Email</label><input id="fEmail" placeholder="name@email.com" inputmode="email"></div>
+      <div class="fld"><label>Type</label><input id="fType" list="typeList" placeholder="Cash Buyer / Realtor">
+        <datalist id="typeList">${typeOptions().map(t => `<option>${esc(t)}</option>`).join('')}</datalist></div>
+      <div class="fld"><label>Offer</label><input id="fOffer" placeholder="115,000" inputmode="numeric"></div>
+      <div class="fld"><label>Earnest</label><input id="fEarnest" placeholder="5,000" inputmode="numeric"></div>
+      <div class="fld"><label>Last touch date</label><input id="fLast" type="date" value="${lastDate()}"></div>
+      <div class="fld full"><label>Notes / last update</label><textarea id="fNotes" rows="3" placeholder="What did they say?"></textarea></div>
+    </div>
+    <p class="hint" style="font-size:11.5px;color:var(--muted);margin:0 0 8px">Saved in this browser on top of your sheet — nothing is written to the original Dispo Sheet.</p>`;
+  const m = openModal('Add buyer row', 'new reply', body,
+    `<span class="hint">Enter to save</span><button class="btn" id="mCancel">Cancel</button>
+     <button class="btn pri" id="mSave">+ Add row</button>`);
+  const val = id => { const el = m.querySelector(id); return el ? el.value.trim() : ''; };
+  const save = () => {
+    const name = val('#fName'), phone = val('#fPhone'), email = val('#fEmail');
+    if(!name && !phone && !email){ toast('Add at least a name, phone or email'); m.querySelector('#fName').focus(); return; }
+    addBuyer(val('#fProp'), {
+      status: val('#fStatus'), source: val('#fSource'), name, phone, email,
+      type: val('#fType'), offer: val('#fOffer'), earnest: val('#fEarnest'),
+      last: val('#fLast'), notes: val('#fNotes'), id: 'NEW',
+    });
+    closeModal();
+  };
+  m.querySelector('#mSave').onclick = save;
+  m.querySelector('#mCancel').onclick = closeModal;
+  m.querySelector('#fName').focus();
+  m.onkeydown = e => { if(e.key === 'Enter' && e.target.tagName !== 'TEXTAREA'){ e.preventDefault(); save(); } };
+}
+function openLeadForm(){
+  const m = openModal('New lead', 'address first — blank rows come with it',
+    `<div class="frow">
+       <div class="fld full"><label>Property address *</label>
+         <input id="pAddr" placeholder="2839 Connolly Dr SW, Atlanta, GA 30311" autocomplete="off" spellcheck="false"></div>
+       <div class="fld"><label>Status</label><select id="pStatus">
+         ${PROP_STATUSES.map((s0,i) => `<option${i === 0 ? ' selected' : ''}>${s0}</option>`).join('')}</select></div>
+       <div class="fld"><label>Price (optional)</label><input id="pPrice" placeholder="125,000" inputmode="numeric"></div>
+       <div class="fld"><label>Blank rows</label><select id="pRows">
+         <option>3</option><option selected>5</option><option>10</option><option>15</option></select></div>
+     </div>
+     <p style="font-size:11.5px;color:var(--muted);margin:0 0 8px">
+       The address becomes a green banner with blank white rows underneath — click a cell in a row and type the buyer.</p>`,
+    `<span class="hint">Enter to add the lead</span><button class="btn" id="mCancel">Cancel</button>
+     <button class="btn pri" id="mSave">+ Add lead</button>`);
+  const save = () => {
+    const address = m.querySelector('#pAddr').value.trim();
+    if(!address){ toast('Address is required'); m.querySelector('#pAddr').focus(); return; }
+    const n = Number(m.querySelector('#pRows').value) || 5;
+    const status = m.querySelector('#pStatus').value;
+    const price = m.querySelector('#pPrice').value.trim();
+    closeModal();
+    addLead({address, status, price}, n);
+  };
+  m.querySelector('#mSave').onclick = save;
+  m.querySelector('#mCancel').onclick = closeModal;
+  m.querySelector('#pAddr').focus();
+  m.onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); save(); } };
+}
+
+/* ── backup / restore / bake into the file ─────────── */
+function exportEdits(){
+  if(!editsCount()){ toast('No edits yet — change a cell first'); return; }
+  downloadFile(`dispo-buyer-edits-${lastDate()}.json`, JSON.stringify(EDITS, null, 2), 'application/json');
+}
+function importEdits(){
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json,application/json';
+  inp.onchange = () => {
+    const f = inp.files && inp.files[0]; if(!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try{
+        const j = JSON.parse(rd.result);
+        if(!j || typeof j !== 'object' || !('ov' in j)) throw new Error('bad file');
+        ask(`Import ${Object.keys(j.ov||{}).length + (j.added||[]).length + (j.del||[]).length} saved changes and replace the current ones?`, () => {
+          EDITS = Object.assign(emptyEdits(), j);
+          saveEdits(); location.reload();
+        });
+      }catch(e){ toast('That file is not a DISPO edits backup'); }
+    };
+    rd.readAsText(f);
+  };
+  inp.click();
+}
+function resetEdits(){
+  if(!editsCount()){ toast('There are no edits to undo'); return; }
+  ask(`Remove all ${editsCount()} local changes and go back to the original sheet data?`, () => {
+    EDITS = emptyEdits(); saveEdits(); location.reload();
+  });
+}
+function downloadBaked(){
+  // write the current edits inside a copy of the app so they travel with the file
+  const tt = $('#toast'); if(tt){ tt.classList.remove('on'); tt.textContent = ''; }
+  document.title = 'DISPO · Real Estate OS';
+  const md = $('#modal'); if(md){ md.classList.remove('on'); md.innerHTML = ''; }
+  const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  const safeJson = JSON.stringify(EDITS).replace(/<\//g, '<\\/');
+  const tag = '<scr' + 'ipt>window.__SEED_EDITS__=' + safeJson + ';</scr' + 'ipt>';
+  // the seed must exist before the app script runs: put it in front of the very first <script>
+  const at = html.indexOf('<script');
+  const out = at > -1 ? html.slice(0, at) + tag + '\n' + html.slice(at) : html + tag;
+  downloadFile(`DISPO-App-with-edits-${lastDate()}.html`, out, 'text/html');
+}
+
+/* ── live site state (elevatereg.com, through the Apps Script bridge) ── */
+const LIVE = { at: null, map: {}, snapshot: null };
+const SITE_KEY = 'dispo:site';
+const SITE_STORE = (() => {
+  const kept = store.get(SITE_KEY, null);
+  if(kept && kept.snap) return kept;
+  const seed = window.__SITE_SNAPSHOT__;
+  if(seed && seed.listings && seed.listings.length){
+    const at = (seed.checked || '2026-01-01') + 'T06:00:00.000Z';
+    const first = {snap: seed, at};
+    store.set(SITE_KEY, first);          // start the 6-hour clock from the baked copy
+    return first;
+  }
+  return null;
+})();
+const SITE_MAX_AGE = 6 * 3600 * 1000;      // refetch every 6 hours at most
+function addrKey(a){
+  const m = String(a||'').toLowerCase().replace(/\b(apt|unit|ste|#)\s*\S+/g,' ')
+    .match(/^(\d+)[^a-z0-9]+([a-z]+)/);
+  return m ? m[1] + '|' + m[2] : String(a||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+}
+/* the site is the source of truth for properties: status, price, beds, baths,
+   sqft and link come from elevatereg.com; buyers still come from the CRM.
+   A property that is on the site but not in the CRM is added, with no buyers. */
+function overlaySite(){
+  if(!LIVE.snapshot) return 0;
+  let touched = 0;
+  D.props.forEach(p => {
+    const l = LIVE.map[addrKey(p.address)];
+    if(!l) return;
+    const pr = Number(String(l.price || '').replace(/[^\d]/g, ''));
+    if(p.status !== l.status || (pr && pr !== p.price)) touched++;
+    p.status = l.status;
+    if(pr) p.price = pr;
+    if(l.beds) p.beds = l.beds;
+    if(l.baths) p.baths = l.baths;
+    if(l.sqft) p.sqft = l.sqft;
+    if(l.link) p.link = l.link;
+    if(l.img && !p.img) p.img = l.img;
+    p.liveChecked = true;
+  });
+  const known = new Set(D.props.map(p => addrKey(p.address)));
+  LIVE.snapshot.listings.forEach(l => {
+    const k = addrKey(l.address);
+    if(!k || known.has(k)) return;
+    known.add(k);
+    const pr = Number(String(l.price || '').replace(/[^\d]/g, ''));
+    D.props.push({
+      row: 's' + l.id, address: l.address, status: l.status || 'Available',
+      price: pr || null, beds: l.beds || '', baths: l.baths || '', sqft: l.sqft || '',
+      link: l.link || '', access: '', notes: '', buyers: [], n: 0, interested: 0,
+      undecided: 0, withPhone: 0, last: '', img: l.img || '', sid: l.id,
+      liveChecked: true, _site: true,
+    });
+  });
+  return touched;
+}
+function applyLive(snap, quiet){
+  if(!snap || !snap.listings || !snap.listings.length) return false;
+  LIVE.snapshot = snap;
+  LIVE.at = snap.checked || new Date().toISOString().slice(0,10);
+  LIVE.map = {};
+  snap.listings.forEach(l => { LIVE.map[addrKey(l.address)] = l; });
+  const touched = overlaySite();
+  applyLive.updated = touched;
+  // inventory: replace with the fresh snapshot
+  D.inventory = snap.listings.map(l => ({
+    id: l.id, address: l.address, price: Number(String(l.price||'').replace(/[^\d]/g,'')) || null,
+    priceTxt: l.price, beds: l.beds, baths: l.baths, sqft: l.sqft, terms: l.terms,
+    status: l.status, link: l.link, img: l.img || '', inSheet: !!D.props.find(p => addrKey(p.address) === addrKey(l.address)),
+  }));
+  // kpi refresh
+  const by = s => D.props.filter(p => p.status === s).length;
+  Object.assign(K, {
+    available: by('Available'), pending: by('Pending'), sold: by('Sold'),
+    offmarket: by('Off-market'), siteTotal: snap.count, siteAvailable: snap.available,
+    sitePending: snap.pending, siteSold: snap.sold, checked: LIVE.at,
+  });
+  // follow-ups whose property just left the market
+  D.followups.forEach(f => {
+    const gone = f.props.filter(a => {
+      const l = LIVE.map[addrKey(a)];
+      return l && !l.available;
+    });
+    f.gone = gone;
+  });
+  const el = $('#synced'); if(el) el.textContent = LIVE.at.split('-').reverse().join('/');
+  if(quiet) return true;
+  renderNav(); route();
+  return true;
+  return touched;
+}
+
+/* ── toast + clipboard ─────────────────────────────── */
+let toastT;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('on'), 1900);
+}
+async function copy(text){
+  try { await navigator.clipboard.writeText(text); toast('Copied to clipboard'); return; }
+  catch(e){}
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    toast('Copied to clipboard');
+  } catch(e){ toast('Copy failed — select the text manually'); }
+}
+function downloadFile(name, text, mime='text/csv'){
+  const blob = new Blob([text], {type: mime+';charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  toast('Downloaded ' + name);
+}
+
+/* ── chips ─────────────────────────────────────────── */
+const statusChip = s => `<span class="chip ${s==='Available'?'g':s==='Pending'?'a':s==='Sold'?'r':'k'} sd">${esc(s||'Off-market')}</span>`;
+const buyerChip = s => `<span class="chip ${s==='Interested'?'b':s==='Undecided'?'k':s==='Not Interested'?'r':s==='Remove Me'?'p':'a'}">${esc(s)}</span>`;
+const daysChip = d => `<span class="chip ${d>=90?'r':d>=30?'a':'b'}">${d}d cold</span>`;
+
+/* ── navigation ────────────────────────────────────── */
+const NAV = [
+  {id:'today',     ic:'today',     t:'Today',            n:K.followups},
+  {id:'properties',ic:'home',      t:'Properties',       n:K.properties},
+  {id:'buyerlist', ic:'sheet',     t:'Buyer List',       n:K.buyers},
+  {id:'messages',  ic:'mail',      t:'Messages',         n:K.followups},
+  {id:'contacts',  ic:'users',     t:'Contacts',         n:K.contacts},
+  {id:'site',      ic:'globe',     t:'Live Inventory',   n:K.siteTotal},
+  {sep:'Records'},
+  {id:'closed',    ic:'handshake', t:'Closed Deals',     n:K.closed},
+  {id:'sync',      ic:'sync',      t:'Site Changes',     n:D.changes.length},
+  {id:'issues',    ic:'warn',      t:'Data Issues',      n:K.issues},
+];
+const TITLES = {
+  today:['Today','What to do right now — ordered by priority'],
+  properties:['Properties','Every property with its buyers'],
+  buyerlist:['Buyer List','Every buyer reply, grouped by property — click any cell to edit'],
+  messages:['Follow-up Messages','One message per person — available properties only'],
+  contacts:['Contacts','One row per person, deduplicated'],
+  site:['Live Inventory','Everything currently on elevatereg.com'],
+  closed:['Closed Deals','Who actually bought'],
+  sync:['Site Changes','Live listings that are not in the sheet'],
+  issues:['Data Issues','Rows worth fixing in the source sheet'],
+};
+function renderNav(){
+  $('#nav').innerHTML = NAV.map(n => n.sep
+    ? `<div class="nav-sep">${n.sep}</div>`
+    : `<button class="nav-item" data-go="${n.id}"><span class="ic">${IC[n.ic]}</span>${n.t}
+        <span class="count">${num(n.id === 'buyerlist' ? K.buyers : n.n)}</span></button>`).join('');
+  $$('#nav [data-go]').forEach(el => el.onclick = () => go(el.dataset.go));
+}
+function go(id){
+  if(location.hash.slice(1) === id) route(); else location.hash = id;
+  closeSide();
+}
+function closeSide(){ $('#side').classList.remove('open'); $('#scrim').classList.remove('on'); }
+window.addEventListener('hashchange', route);
+
+const VIEWS = {
+  today: viewToday, properties: viewProps, buyerlist: viewBuyerList, messages: viewMsgs,
+  contacts: viewContacts, site: viewSite, closed: viewClosed, sync: viewSync, issues: viewIssues,
+};
+let CURRENT = 'today';
+function route(){
+  const id = (location.hash||'#today').slice(1);
+  CURRENT = VIEWS[id] ? id : 'today';
+  $$('#nav .nav-item').forEach(e => e.classList.toggle('on', e.dataset.go === CURRENT));
+  const [t, s] = TITLES[CURRENT];
+  $('#ttl').textContent = t; $('#stl').textContent = s;
+  document.title = `DISPO · ${t}`;
+  window.scrollTo(0,0);
+  $('#results').hidden = true;
+  if(CURRENT !== 'buyerlist') document.body.classList.remove('sheet-full');
+  try { VIEWS[CURRENT](); }
+  catch(err){ console.error(err); $('#view').innerHTML =
+    `<div class="empty"><b>Something went wrong rendering this view</b>${esc(err.message)}</div>`; }
+}
+
+/* ══════════════════ TODAY ══════════════════ */
+function viewToday(){
+  const fu = D.followups;
+  const dead = (D.today.dead||[]).map(r => D.props.find(p => p.row === r)).filter(Boolean);
+  const stale = (D.today.stale||[]).map(r => D.props.find(p => p.row === r)).filter(Boolean);
+  const missing = D.today.missing || [];
+  const nostat = D.today.nostat || [];
+  const doneCount = fu.filter(f => SENT.has(f.raw)).length;
+  const pct = fu.length ? Math.round(doneCount / fu.length * 100) : 0;
+
+  $('#view').innerHTML = `
+  <div class="kpis">
+    <div class="kpi r"><div class="k">Calls due</div><div class="v">${num(fu.length)}</div>
+      <div class="d">${num(K.fuInterested)} interested · ${num(K.fuUndecided)} undecided</div></div>
+    <div class="kpi g"><div class="k">Available on site</div><div class="v">${num(K.siteAvailable)}</div>
+      <div class="d">of ${num(K.siteTotal)} listings</div></div>
+    <div class="kpi a"><div class="k">Unclassified replies</div><div class="v">${num(K.noStatus)}</div>
+      <div class="d">need a status</div></div>
+    <div class="kpi p"><div class="k">Available · no buyers</div><div class="v">${num(dead.length)}</div>
+      <div class="d">not being worked</div></div>
+  </div>
+
+  ${syncStrip()}
+
+  <div class="card">
+    <div class="card-h">
+      <h3>1 · Call these first <span class="num">${num(fu.length)}</span></h3>
+      <span class="hint">7+ days cold · property still available</span>
+      <div class="right">
+        <div class="progress" title="${doneCount} of ${fu.length} marked sent"><span style="width:${pct}%"></span></div>
+        <span class="hint">${doneCount}/${fu.length} sent</span>
+        <button class="btn sm" id="fuToggle">Show all</button>
+      </div>
+    </div>
+    <div class="card-b" id="todayFu"></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-h"><h3>2 · Available with no buyers <span class="num">${dead.length}</span></h3></div>
+      <div class="card-b">${dead.length ? dead.map(p => `
+        <div class="msg"><div class="mh"><b>${esc(p.address)}</b>${statusChip(p.status)}
+          <span class="tel">${money(p.price)}</span></div>
+          <div class="body">No buyer has ever been matched to this property. Run a blast.</div></div>`).join('')
+        : `<div class="empty"><b>All clear</b>Every available property has buyers attached.</div>`}</div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>3 · On the site, not in the sheet <span class="num">${missing.length}</span></h3></div>
+      <div class="card-b">${missing.length ? missing.map(m => `
+        <div class="msg"><div class="mh"><b>${esc(m.address)}</b>${statusChip('Available')}
+          <span class="tel">${esc(m.priceTxt||'')}</span></div>
+          <div class="macts">
+            <a class="btn sm" href="${esc(m.link)}" target="_blank" rel="noopener">${IC.ext} Open listing</a>
+            <button class="btn sm" data-copy="${esc(m.address)}">${IC.copy} Copy address</button>
+          </div></div>`).join('') : `<div class="empty"><b>Nothing missing</b>Every live listing is in the sheet.</div>`}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>4 · Replies with no status <span class="num">${num(K.noStatus)}</span></h3>
+      <span class="hint">showing ${Math.min(nostat.length, K.noStatus)}</span>
+      <div class="right"><input class="input" id="nsq" placeholder="Filter by name or address…" style="width:230px"></div></div>
+    <div class="t-scroll"><table>
+      <thead><tr><th>Name</th><th>Phone</th><th>Property</th><th>Last touch</th><th>Note</th></tr></thead>
+      <tbody id="nsBody">${nostat.map(n => `
+        <tr data-ns="${esc((n.name+' '+n.address).toLowerCase())}">
+          <td>${esc(n.name||'—')}</td>
+          <td class="mono">${esc(n.phone||'—')} ${n.hasPhone?'':'<span class="chip r">no number</span>'}</td>
+          <td>${esc(n.address)}</td><td class="num">${esc(n.last||'—')}</td>
+          <td class="wrap" style="color:#5b6b7e">${esc(n.note||'')}</td>
+        </tr>`).join('')}</tbody></table></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>5 · Site says sold / pending, still open</h3>
+      <span class="hint">${stale.length} properties — check before quoting</span></div>
+    <div class="card-b tight"><div class="t-scroll"><table>
+      <thead><tr><th>Property</th><th>Site status</th><th>Price</th><th class="c">Buyers</th><th class="c">Interested</th></tr></thead>
+      <tbody>${stale.slice(0,80).map(p => `<tr>
+        <td><b>${esc(p.address)}</b></td><td>${statusChip(p.status)}</td>
+        <td class="num">${money(p.price)}</td><td class="c num">${p.n}</td>
+        <td class="c num">${p.interested}</td></tr>`).join('')}</tbody></table></div></div>
+  </div>`;
+
+  renderTodayFu(FU_ALL);
+  bindSent();
+  bindSyncStrip();
+  const fuBtn = $('#fuToggle');
+  fuBtn.dataset.all = FU_ALL ? '1' : '0';
+  fuBtn.textContent = FU_ALL ? 'Show less' : 'Show all';
+  fuBtn.onclick = e => {
+    renderTodayFu(!FU_ALL);
+    route();
+  };
+  $('#nsq').oninput = e => {
+    const q = e.target.value.toLowerCase();
+    $$('#nsBody tr').forEach(tr => tr.style.display = tr.dataset.ns.includes(q) ? '' : 'none');
+  };
+  bindCopy();
+}
+/* a live sync strip on the Today page — state, stamps and one button */
+function syncStrip(){
+  return `<div class="card syncstrip">
+    <div class="card-h">
+      <h3>Google Sheet sync <span class="sync-dot" id="tSyncDot"></span></h3>
+      <span class="hint" id="tSyncMsg">${esc(syncStateText())}</span>
+      <div class="right">
+        <span class="hint">${SYNC.auto ? 'instant sync on' : 'instant sync off'}</span>
+        <button class="btn sm" id="tSyncOpen">Sync settings</button>
+        <button class="btn sm pri" id="tSyncNow"${SYNC.url ? '' : ' disabled'}>Sync now</button>
+      </div>
+    </div>
+    <div class="card-b syncmeta">${syncMetaHtml()}</div></div>`;
+}
+function bindSyncStrip(){
+  const now = $('#tSyncNow'), open = $('#tSyncOpen');
+  if(open) open.onclick = syncPanel;
+  if(now) now.onclick = async () => {
+    now.dataset.busy = '1'; now.disabled = true; now.textContent = 'Syncing…';
+    if(syncDirty()) await syncPush();
+    await syncPull(false);
+    delete now.dataset.busy; now.disabled = false; now.textContent = 'Sync now';
+    if(CURRENT === 'today') viewToday();
+  };
+  syncBadge();
+}
+
+let FU_ALL = false;
+function renderTodayFu(all){
+  if(all === undefined) all = FU_ALL;
+  FU_ALL = all;
+  const list = D.followups.slice(0, all ? D.followups.length : 8);
+  $('#todayFu').innerHTML = list.length ? list.map(f => msgBlock(f, {today:true})).join('')
+    : `<div class="empty"><b>Nothing to call</b>No follow-ups are due right now.</div>`;
+  bindCopy();
+  $$('[data-openprop]').forEach(b => b.onclick = () => {
+    const hit = D.props.find(p => p.address === b.dataset.openprop);
+    if(hit){ go('properties'); setTimeout(()=>openProp(hit.row), 80); }
+  });
+}
+
+/* ══════════════════ PROPERTIES ══════════════════ */
+let pFilter = 'all', pQ = '', pSort = 'buyers';
+function viewProps(){
+  $('#view').innerHTML = `
+  <div class="kpis">
+    <div class="kpi g"><div class="k">Available</div><div class="v">${num(K.available)}</div></div>
+    <div class="kpi a"><div class="k">Pending</div><div class="v">${num(K.pending)}</div></div>
+    <div class="kpi r"><div class="k">Sold</div><div class="v">${num(K.sold)}</div></div>
+    <div class="kpi p"><div class="k">Off-market</div><div class="v">${num(K.offmarket)}</div></div>
+    <div class="kpi"><div class="k">Buyer records</div><div class="v">${num(K.buyers)}</div>
+      <div class="d">${(K.buyers/K.properties).toFixed(1)} per property</div></div>
+  </div>
+  <div class="card">
+    <div class="card-h">
+      <div class="seg" id="pf">
+        ${[['all','All',K.properties],['Available','Available',K.available],['Pending','Pending',K.pending],
+           ['Sold','Sold',K.sold],['Off-market','Off-market',K.offmarket]]
+          .map(([k,t,n])=>`<button data-pf="${k}" class="${k===pFilter?'on':''}">${t}<span class="n">${num(n)}</span></button>`).join('')}
+      </div>
+      <div class="right">
+        <select class="input" id="psort" aria-label="Sort">
+          <option value="buyers">Most buyers</option>
+          <option value="interested">Most interested</option>
+          <option value="price">Highest price</option>
+          <option value="address">Address A–Z</option>
+          <option value="recent">Most recent touch</option>
+        </select>
+        <input class="input" id="pq" placeholder="Filter by address, city, ZIP…" style="width:230px">
+      </div>
+    </div>
+    <div class="card-b"><div class="pgrid" id="pgrid"></div></div>
+  </div>`;
+  $('#psort').value = pSort;
+  $$('#pf button').forEach(b => b.onclick = () => {
+    pFilter = b.dataset.pf;
+    $$('#pf button').forEach(x => x.classList.toggle('on', x === b));
+    renderProps();
+  });
+  $('#pq').oninput = e => { pQ = e.target.value.toLowerCase(); renderProps(); };
+  $('#psort').onchange = e => { pSort = e.target.value; renderProps(); };
+  renderProps();
+}
+function renderProps(){
+  const grid = $('#pgrid'); if(!grid) return;
+  let list = D.props.filter(p =>
+    (pFilter === 'all' || p.status === pFilter) &&
+    (!pQ || (p.address+' '+p.city+' '+p.zip).toLowerCase().includes(pQ)));
+  const by = {
+    buyers: (a,b) => b.n - a.n,
+    interested: (a,b) => b.interested - a.interested,
+    price: (a,b) => (b.price||0) - (a.price||0),
+    address: (a,b) => a.address.localeCompare(b.address),
+    recent: (a,b) => String(b.last).localeCompare(String(a.last)),
+  }[pSort];
+  list = list.slice().sort(by);
+  grid.innerHTML = list.length ? list.map(propCard).join('')
+    : `<div class="empty" style="grid-column:1/-1"><b>No matches</b>Try a different filter or search term.</div>`;
+  $$('[data-prop]', grid).forEach(el => {
+    $('.phead', el).onclick = () => el.classList.toggle('open');
+  });
+  bindCopy();
+  $$('[data-copyall]', grid).forEach(b => b.onclick = () => {
+    const p = D.props.find(x => x.row === +b.dataset.copyall);
+    const lines = p.buyers.filter(x => x.raw).map(x => `${x.name} — ${x.phone} — ${p.address}`);
+    copy(lines.join('\n') || 'No phone numbers on this property');
+  });
+}
+function openProp(row){
+  go('properties');
+  setTimeout(() => {
+    const el = document.querySelector(`[data-prop="${row}"]`);
+    if(el){ el.classList.add('open'); el.scrollIntoView({behavior:'smooth', block:'center'}); }
+  }, 60);
+}
+function propCard(p){
+  const thumb = p.img ? `<img src="${p.img}" alt="" loading="lazy">`
+    : `<span style="opacity:.4">${SVG('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.8V21h14V9.8"/>',26)}</span>`;
+  const shown = p.buyers.slice(0, 50);
+  const rows = shown.length ? shown.map(b => `
+    <div class="brow">
+      <div class="nm"><b>${esc(b.name||'—')}</b>
+        <span class="tel mono">${esc(b.phone||'no phone')}</span></div>
+      <div>${buyerChip(b.status)}${b.repeat?`<span class="chip p" style="margin-left:5px">×${b.rows}</span>`:''}</div>
+      <div class="acts">
+        ${b.raw?`<a class="btn sm wa" href="${waLink(b.raw)}" target="_blank" rel="noopener"
+           title="WhatsApp ${esc(b.phone)}" aria-label="WhatsApp">${IC.wa}</a>`:''}
+        ${b.email?`<a class="btn sm" href="mailto:${esc(b.email)}" title="${esc(b.email)}"
+           aria-label="Email">${IC.mail}</a>`:''}
+        ${b.raw?`<button class="btn sm" data-copy="${esc(b.phone)}" aria-label="Copy phone">${IC.copy}</button>`:''}
+      </div>
+    </div>`).join('') : `<div class="empty"><b>No buyers yet</b>This property has never been blasted.</div>`;
+  return `<div class="pcard" data-prop="${p.row}">
+    <div class="phead" style="cursor:pointer">
+      <div class="ph">
+        <div class="thumb">${thumb}</div>
+        <div class="phb">
+          <div class="ad">${esc(p.address)}</div>
+          <div class="meta one"><span>${esc(p.zip)}</span> · ${money(p.price)} · ${p.n} buyers</div>
+          <div class="chips">${statusChip(p.status)}
+            <span class="chip b">${p.interested} interested</span>
+            ${p.liveChecked?'<span class="chip g" title="verified in the last live refresh">live</span>':''}</div>
+        </div>
+      </div>
+    </div>
+    <div class="blist"><div class="inner">${rows}
+      ${p.n > shown.length ? `<div class="more">+ ${p.n - shown.length} more buyers in the source sheet</div>` : ''}
+    </div></div>
+    <div class="foot">
+      ${p.link?`<a class="btn sm" href="${esc(p.link)}" target="_blank" rel="noopener">${IC.ext} Listing</a>`:''}
+      <button class="btn sm" data-copyall="${p.row}">${IC.copy} Copy numbers</button>
+      <span class="right">${p.last ? 'Last touch '+esc(fmtDate(p.last)) : 'Never contacted'}</span>
+    </div>
+  </div>`;
+}
+
+
+/* ══════════════════ BUYER LIST (spreadsheet, like the original Dispo Sheet) ══ */
+const SHEET_COLS = [
+  {k:'rn',   t:'#',                w:46},
+  {k:'st',   t:'Buyer Status',     w:118},
+  {k:'src',  t:'Source',           w:96},
+  {k:'off',  t:'Offer',            w:86},
+  {k:'ear',  t:'Earnest',          w:80},
+  {k:'typ',  t:'Type',             w:104},
+  {k:'nm',   t:'Name',             w:164},
+  {k:'tel',  t:'Phone Number',     w:136},
+  {k:'em',   t:'Email',            w:194},
+  {k:'last', t:'Last Touch Date',  w:112},
+  {k:'nt',   t:'Notes / Last Update', w:300},
+  {k:'cid',  t:'Contact ID',       w:92},
+  {k:'act',  t:'Actions',          w:132},
+];
+const STATUS_CLASS = {Interested:'s-Interested', Undecided:'s-Undecided',
+  'Not Interested':'s-NotInterested', 'Remove Me':'s-RemoveMe', 'No Status':'s-NoStatus'};
+const SHEET = {q:'', status:new Set(), phoneOnly:false, compact:false, open:new Set(), limit:50,
+  sortStatus: store.get('sheetSort', true)};
+
+function cleanNote(t){
+  return String(t||'')
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/\s+/g,' ')
+    .replace(/^[\s·\-–—]+|[\s·\-–—]+$/g,'')
+    .trim();
+}
+function sheetRows(p){
+  return p.buyers.filter(b => {
+    if(b._blank) return false;                 // blank rows are never a reply
+    if(SHEET.status.size && !SHEET.status.has(b.status)) return false;
+    if(SHEET.phoneOnly && !b.raw) return false;
+    if(SHEET.q){
+      const hay = (b.name+' '+b.phone+' '+b.email+' '+b.notes+' '+b.source+' '+p.address).toLowerCase();
+      if(!hay.includes(SHEET.q)) return false;
+    }
+    return true;
+  }).sort((x, y) => {
+    if(!SHEET.sortStatus) return 0;
+    const d = (STATUS_RANK[x.status] ?? 9) - (STATUS_RANK[y.status] ?? 9);
+    return d;                       // stable: same status keeps the sheet order
+  });
+}
+
+function counts_props(){ return D.props.filter(p => p.buyers.length).length; }
+
+/* ══════════════════ GOOGLE SHEET SYNC (two way) ════════════════════════════
+   The app talks to a Google Apps Script Web App (automation/dispo_sync.gs)
+   through JSONP, so it works from a plain file:// or a static host — no server
+   and no OAuth popup needed.
+     • push : every local change (new row, edited cell, delete) is queued and
+              sent to the sheet in small chunks
+     • pull : rows changed in the sheet come back and are applied here
+     • last write wins, compared on the ISO `updated` stamp of each row
+   ══════════════════════════════════════════════════════════════════════════ */
+const SYNC_KEY = 'gsync';
+/* the Web App this build ships with — a new device connects by itself;   */
+/* Settings can still override it                                        */
+const SYNC_DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxY-tvyvlwbtthfPcqhEE__Nz-3woimoJI_LIXgnEQQ0C7q5oiKhD9uHm90kCVoCInI/exec';
+let SYNC = Object.assign({url:SYNC_DEFAULT_URL, auto:true, lastPull:'', lastPush:'', state:'', rev:''}, store.get(SYNC_KEY, {}));
+if(!SYNC.url) SYNC.url = SYNC_DEFAULT_URL;
+const saveSync = () => store.set(SYNC_KEY, SYNC);
+
+function jsonp(url, params, timeout){
+  return new Promise((resolve, reject) => {
+    const cb = '__jp' + Math.random().toString(36).slice(2);
+    const qs = new URLSearchParams(Object.assign({}, params, {callback: cb})).toString();
+    const sc = document.createElement('script');
+    let done = false;
+    const clean = () => { try{ delete window[cb]; }catch(e){ window[cb] = undefined; } sc.remove(); clearTimeout(tm); };
+    const tm = setTimeout(() => { if(!done){ done = true; clean(); reject(new Error('The sheet did not answer in time')); } }, timeout || 30000);
+    window[cb] = data => { if(done) return; done = true; clean(); resolve(data); };
+    sc.onerror = () => { if(done) return; done = true; clean(); reject(new Error('Cannot reach the Web App URL')); };
+    sc.src = url + (url.indexOf('?') > -1 ? '&' : '?') + qs;
+    document.head.appendChild(sc);
+  });
+}
+
+/* one row of the sheet <- one buyer row of the app */
+const SYNC_FIELDS = ['status','source','offer','earnest','type','name','phone','email','last','notes'];
+function syncKeyOf(b){ return b._k; }
+function rowToSheet(b){
+  const o = {key: syncKeyOf(b), property: (b._p && b._p.address) || '', cid: b.id || '',
+             updated: (EDITS.ts && EDITS.ts[b._k]) || SYNC.lastPull || ''};
+  SYNC_FIELDS.forEach(f => { o[f] = f === 'offer' ? String(b.offerTxt || (b.offer != null ? b.offer : '')) : String(b[f] == null ? '' : b[f]); });
+  return o;
+}
+const tsOf = k => (EDITS.ts && EDITS.ts[k]) || '';
+const sentOf = k => (EDITS.sent && EDITS.sent[k]) || '';
+const unsent = k => tsOf(k) > sentOf(k);
+function pendingOps(){
+  const ops = [], seen = new Set();
+  EDITS.added.forEach(a => {
+    if(!unsent(a.key)) return;
+    const b = BMAP.get(a.key); if(!b) return;
+    const row = rowToSheet(b); ops.push({op:'set', key: row.key, row}); seen.add(a.key);
+  });
+  Object.keys(EDITS.ov).forEach(k => {
+    if(seen.has(k) || !unsent(k)) return;
+    const b = BMAP.get(k); if(!b) return;
+    const row = rowToSheet(b); ops.push({op:'set', key: row.key, row}); seen.add(k);
+  });
+  EDITS.del.forEach(k => { if(unsent(k)) ops.push({op:'del', key:k, updated: tsOf(k)}); });
+  return ops;
+}
+function markSent(op){
+  EDITS.sent = EDITS.sent || {};
+  EDITS.sent[op.key] = (op.op === 'set' ? (op.row && op.row.updated) : op.updated) || nowIso();
+}
+const syncDirty = () => pendingOps().length > 0;
+
+/* called by touch() — 1.5 s after the last keystroke the change goes up,
+   so the sheet follows the app with no button pressed */
+let syncTimer = null;
+function syncKick(){
+  syncBadge();
+  if(!SYNC.url || !SYNC.auto) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    if(SYNC.state === 'busy'){ syncKick(); return; }
+    if(syncDirty()) syncPush();
+  }, 1500);
+}
+
+const syncDotCls = () => SYNC.state === 'err' ? 'err' : !SYNC.url ? '' :
+  (SYNC.state === 'busy' ? 'wait' : (syncDirty() ? 'wait' : 'ok'));
+const syncMetaHtml = () => {
+  const dt = v => v ? new Date(v).toLocaleString() : '—';
+  return `<span>Last pull <b>${esc(dt(SYNC.lastPull))}</b></span>
+    <span>Last push <b>${esc(dt(SYNC.lastPush))}</b></span>
+    <span>Sheet <b>${SYNC.url ? 'connected' : 'not connected'}</b></span>`;
+};
+/* repaints every sync surface that happens to be on screen right now:
+   the buyer-list button, the Today strip and the panel read-out */
+function syncBadge(){
+  const dot = syncDotCls();
+  const el = $('#sSync');
+  if(el){
+    const txt = SYNC.url ? (SYNC.state === 'busy' ? 'Syncing…' : (syncDirty() ? 'Sync pending' : 'Sheet synced')) : 'Sheet sync';
+    el.innerHTML = `<span class="sync-dot ${dot}"></span> ${txt}`;
+  }
+  const msg = $('#tSyncMsg'), d2 = $('#tSyncDot');
+  if(msg) msg.textContent = syncStateText();
+  if(d2) d2.className = 'sync-dot ' + dot;
+  const meta = $('.syncstrip .syncmeta');
+  if(meta) meta.innerHTML = syncMetaHtml();
+  const now = $('#tSyncNow');
+  if(now && !now.dataset.busy) now.disabled = !SYNC.url;
+}
+function syncStateText(){
+  if(SYNC.state === 'err') return 'Connection problem — check the Web App URL';
+  if(SYNC.state === 'busy') return 'Syncing…';
+  if(!SYNC.url) return 'Not connected yet — open Settings';
+  const n = pendingOps().length;
+  return n ? n + ' change' + (n === 1 ? '' : 's') + ' waiting to go up' : 'Everything is in sync';
+}
+
+async function syncPing(url){
+  const r = await jsonp(url || SYNC.url, {action:'ping'}, 45000);
+  if(!r || !r.ok) throw new Error((r && r.error) || 'The Web App did not answer with ok');
+  return r;
+}
+async function syncPush(){
+  if(!SYNC.url){ syncPanel(); return; }
+  const ops = pendingOps();
+  if(!ops.length){ toast('Nothing to send — the sheet is already up to date'); return; }
+  SYNC.state = 'busy'; syncBadge(); const bar = $('#syncBar'), fill = $('#syncFill');
+  if(bar){ bar.classList.add('on'); fill.style.width = '0%'; }
+  let sent = 0;
+  const CH = 40;
+  try{
+    for(let i = 0; i < ops.length; i += CH){
+      const chunk = ops.slice(i, i + CH);
+      const r = await jsonp(SYNC.url, {action:'push', payload: JSON.stringify(chunk)}, 90000);
+      if(r && r.rev) SYNC.rev = r.rev;
+      if(!r || !r.ok) throw new Error((r && r.error) || 'The sheet rejected the chunk');
+      chunk.forEach(markSent);
+      saveEdits();
+      sent += chunk.length;
+      if(fill) fill.style.width = Math.round(sent / ops.length * 100) + '%';
+    }
+    SYNC.lastPush = nowIso();
+    SYNC.state = 'ok'; saveSync(); syncBadge(); syncStatus();
+    toast(`Sent ${sent} change${sent === 1 ? '' : 's'} to the sheet`);
+  }catch(err){
+    SYNC.state = 'err'; saveSync(); syncBadge(); syncStatus();
+    toast('Sync failed: ' + err.message);
+  }finally{
+    if(bar){ setTimeout(() => { bar.classList.remove('on'); fill.style.width = '0%'; }, 600); }
+  }
+}
+function propertyRowFor(address){
+  const hit = D.props.find(p => String(p.address).trim().toLowerCase() === String(address).trim().toLowerCase());
+  if(hit) return String(hit.row);
+  const row = 'n' + nextSeq();
+  EDITS.props.push({row, address: address, status:'Available', price:''});
+  saveEdits(); applySheetEdits();
+  return String(row);
+}
+/* a lead arriving from the sheet is matched by key first, then by property +
+   name / phone / email — the sheet's own rows have no key of ours */
+const normS = s => String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]/g, '');
+function buildBuyerIndex(){
+  const idx = {byKey:new Map(), byAN:new Map(), byAP:new Map(), byAE:new Map()};
+  BMAP.forEach(b => {
+    idx.byKey.set(b._k, b);
+    const a = normS(b._p && b._p.address).slice(0, 22);
+    if(!a) return;
+    const n = normS(b.name); if(n && !idx.byAN.has(a + '|' + n)) idx.byAN.set(a + '|' + n, b);
+    const ph = normS(b.phone); if(ph && !idx.byAP.has(a + '|' + ph)) idx.byAP.set(a + '|' + ph, b);
+    const em = normS(b.email); if(em && !idx.byAE.has(a + '|' + em)) idx.byAE.set(a + '|' + em, b);
+  });
+  return idx;
+}
+function findBuyerFast(idx, row){
+  const direct = idx.byKey.get(row.key);
+  if(direct) return direct;
+  const a = normS(row.property).slice(0, 22);
+  if(!a) return null;
+  const n = normS(row.name), ph = normS(row.phone), em = normS(row.email);
+  return (n && idx.byAN.get(a + '|' + n))
+      || (ph && idx.byAP.get(a + '|' + ph))
+      || (em && idx.byAE.get(a + '|' + em)) || null;
+}
+function findBuyerForSheet(row){
+  const direct = BMAP.get(row.key);
+  if(direct) return direct;
+  const addr = normS(row.property).slice(0, 22);
+  if(!addr) return null;
+  const cands = [];
+  BMAP.forEach(x => { if(x._p && normS(x._p.address).slice(0, 22) === addr) cands.push(x); });
+  if(!cands.length) return null;
+  const n = normS(row.name), ph = normS(row.phone), em = normS(row.email);
+  return cands.find(x => n && normS(x.name) === n)
+      || cands.find(x => ph && normS(x.phone) === ph)
+      || cands.find(x => em && normS(x.email) === em) || null;
+}
+function applySheetRow(row, idx){
+  if(!row || !row.key) return 0;
+  const b = idx ? findBuyerFast(idx, row) : findBuyerForSheet(row);
+  const k = b ? b._k : row.key;
+  const sheetTs = row.updated || '';
+  const localTs = (EDITS.ts && EDITS.ts[k]) || '';
+  if(b){
+    if(sheetTs && localTs && sheetTs < localTs) return 0;      // my change is newer — keep it
+    const patch = {};
+    SYNC_FIELDS.forEach(f => {
+      const v = String(row[f] == null ? '' : row[f]);
+      const cur = f === 'offer' ? String(b.offerTxt || (b.offer != null ? b.offer : '')) : String(b[f] == null ? '' : b[f]);
+      if(v !== cur) patch[f] = v;
+    });
+    if(!Object.keys(patch).length) return 0;
+    EDITS.ov[k] = Object.assign(EDITS.ov[k] || {}, patch);
+    EDITS.ts = EDITS.ts || {}; EDITS.ts[k] = sheetTs || nowIso();
+    EDITS.sent = EDITS.sent || {}; EDITS.sent[k] = EDITS.ts[k];
+    return 1;
+  }
+  // a row that only exists in the sheet
+  const propRow = propertyRowFor(row.property || 'Imported from the sheet');
+  const data = {id: row.cid || 'SYNC'};
+  SYNC_FIELDS.forEach(f => { if(row[f] != null && row[f] !== '') data[f] = String(row[f]); });
+  EDITS.added.push({key: row.key, propRow, data});
+  EDITS.ts = EDITS.ts || {}; EDITS.ts[row.key] = sheetTs || nowIso();
+  EDITS.sent = EDITS.sent || {}; EDITS.sent[row.key] = EDITS.ts[row.key];
+  return 1;
+}
+async function syncPull(full){
+  if(!SYNC.url){ syncPanel(); return; }
+  SYNC.state = 'busy'; syncBadge(); syncStatus();
+  try{
+    const since = full ? '' : (SYNC.lastPull || '');
+    const r = await jsonp(SYNC.url, {action:'pull', since}, 120000);
+    if(!r || !r.ok) throw new Error((r && r.error) || 'The sheet refused the pull');
+    let changed = 0;
+    const bidx = buildBuyerIndex();          // one pass, not one scan per row
+    (r.rows || []).forEach(row => { changed += applySheetRow(row, bidx); });
+    (r.deleted || []).forEach(k => {
+      const localTs = (EDITS.ts && EDITS.ts[k]) || '';
+      if(!EDITS.del.includes(k)){ EDITS.del.push(k); }
+      if(localTs) EDITS.ts[k] = localTs;
+    });
+    SYNC.lastPull = r.serverTime || nowIso();
+    if(r.rev) SYNC.rev = r.rev;
+    SYNC.state = 'ok'; saveSync();
+    applySheetEdits(); renderSheet(); paintSheetNumbers(); renderSeg(); syncBadge(); syncStatus();
+    toast(changed ? `Pulled ${changed} row${changed === 1 ? '' : 's'} from the sheet` : 'The sheet has nothing new');
+  }catch(err){
+    SYNC.state = 'err'; saveSync(); syncBadge(); syncStatus();
+    toast('Pull failed: ' + err.message);
+  }
+}
+function syncStatus(){
+  const el = $('#syncStatus');
+  if(!el) return;
+  const ops = pendingOps().length;
+  el.innerHTML = `<span><b>${ops}</b> change${ops === 1 ? '' : 's'} waiting to go up</span>
+    <span>Last pull: <b>${SYNC.lastPull ? new Date(SYNC.lastPull).toLocaleString() : '—'}</b></span>
+    <span>State: <b>${SYNC.state === 'err' ? 'error' : SYNC.url ? (SYNC.state === 'busy' ? 'working…' : 'connected') : 'not connected'}</b></span>`;
+}
+function syncPanel(){
+  const m = openModal('Google Sheet sync', 'two directions',
+    `<div class="syncbox">
+      <div class="steps">
+        <b>One-time setup (2 minutes):</b><br>
+        1. In Google Sheets open <b>Extensions ▸ Apps Script</b> and paste <code>automation/dispo_sync.gs</code>.<br>
+        2. <b>Deploy ▸ New deployment ▸ Web app</b> — execute as <b>Me</b>, access <b>Anyone</b>.<br>
+        3. Copy the <code>…/exec</code> URL and paste it below, then press <b>Connect</b>.
+      </div>
+      <div class="row">
+        <input type="url" id="syncUrl" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(SYNC.url)}">
+        <button class="btn pri" id="syncGo">Connect</button>
+      </div>
+      <div class="bar" id="syncBar"><i id="syncFill"></i></div>
+      <div class="state" id="syncStatus"></div>
+      <div class="row">
+        <label class="sw"><input type="checkbox" id="syncAuto"${SYNC.auto ? ' checked' : ''}><i></i> Automatic — push on every change, pull every 20 s</label>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn" id="syncPushBtn">↑ Push my changes</button>
+          <button class="btn" id="syncPullBtn">↓ Pull from sheet</button>
+        </div>
+      </div>
+      <p style="font-size:11.5px;color:var(--muted);margin:0">
+        Last write wins: a row changed on both sides keeps the newer one. Your original Dispo Sheet is never
+        touched — the app syncs with the dedicated tab created by the script.</p>
+    </div>`,
+    `<span class="hint">Esc closes</span><button class="btn" id="mCancel2">Close</button>
+     <button class="btn pri" id="syncAll">Sync both ways now</button>`);
+  const val = () => (m.querySelector('#syncUrl').value || '').trim();
+  m.querySelector('#mCancel2').onclick = closeModal;
+  m.querySelector('#syncGo').onclick = async () => {
+    SYNC.url = val(); saveSync();
+    try{
+      const r = await syncPing();
+      SYNC.state = 'ok'; if(r.rev) SYNC.rev = r.rev; saveSync(); syncStatus(); syncBadge();
+      toast(`Connected to ${r.sheet || 'the sheet'} · ${r.rows || 0} rows`);
+    }catch(e){ SYNC.state = 'err'; saveSync(); syncStatus(); syncBadge(); toast('Connect failed: ' + e.message); }
+  };
+  m.querySelector('#syncPushBtn').onclick = async () => { SYNC.url = val(); saveSync(); await syncPush(); syncStatus(); };
+  m.querySelector('#syncPullBtn').onclick = async () => { SYNC.url = val(); saveSync(); await syncPull(false); syncStatus(); };
+  m.querySelector('#syncAuto').onchange = e => { SYNC.auto = e.target.checked; saveSync(); };
+  m.querySelector('#syncAll').onclick = async () => {
+    SYNC.url = val(); saveSync();
+    await syncPush(); await syncPull(false); syncStatus(); syncBadge();
+  };
+  syncStatus();
+}
+/* "has the sheet moved?" — one tiny call; a full pull only when it has */
+async function syncRevCheck(){
+  const r = await jsonp(SYNC.url, {action:'rev'}, 30000);
+  if(!r || !r.ok) return false;
+  if(!r.rev) return true;                 // older deployment: fall back to pulling
+  if(r.rev !== SYNC.rev){ SYNC.rev = r.rev; saveSync(); return true; }
+  return false;
+}
+/* automatic loop — instant pushes come from syncKick(), this catches edits
+   made in the sheet and anything the browser missed while closed */
+setInterval(async () => {
+  if(!SYNC.url || !SYNC.auto) return;
+  if(SYNC.state === 'busy') return;
+  if(syncDirty()){ await syncPush(); return; }
+  try{ if(await syncRevCheck()) await syncPull(false); }catch(e){}
+}, 20000);
+
+/* ══════════════════ SHEET UX ENGINE ═══════════════════════════════════════
+   full screen, jump-to-property, active filter chips, sticky property name,
+   back to top, keyboard cell navigation and the 3D tilt on the KPI cards.
+   ════════════════════════════════════════════════════════════════════════ */
+const isFull = () => document.body.classList.contains('sheet-full');
+function setFull(on){
+  document.body.classList.toggle('sheet-full', !!on);
+  const btn = $('#sFull');
+  if(btn) btn.innerHTML = on ? IC.minimize + ' Exit full screen' : IC.maximize + ' Full screen';
+  store.set('sheetFull', !!on);
+  const sc = $('#sheetScroll');
+  if(sc) sc.style.maxHeight = on ? 'none' : '';
+  setTimeout(updateStickyGroup, 80);
+}
+function jumpTo(row){
+  SHEET.open = new Set([String(row)]);
+  SHEET.animKey = String(row);
+  SHEET.q = ''; SHEET.status.clear();
+  const q = $('#sQ'); if(q) q.value = '';
+  renderSheet(); paintSheetNumbers(); renderChips();
+  const tr = document.querySelector(`#sBody tr.sb[data-g="${String(row).replace(/"/g,'\\"')}"]`);
+  const sc = $('#sheetScroll');
+  if(tr && sc){
+    const y = tr.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - 44;
+    sc.scrollTo({top: Math.max(0, y), behavior:'smooth'});
+    tr.classList.add('anim-flip3d');
+    setTimeout(() => tr.classList.remove('anim-flip3d'), 600);
+  }
+}
+function renderChips(){
+  const el = $('#fchips'); if(!el) return;
+  const chips = [];
+  if(SHEET.q) chips.push({t:'search: ' + SHEET.q, k:'q'});
+  [...SHEET.status].forEach(st => chips.push({t:st, k:'status', v:st}));
+  if(SHEET.phoneOnly) chips.push({t:'with phone only', k:'phone'});
+  if(SHEET.sortStatus === false) chips.push({t:'sheet order', k:'sort'});
+  el.innerHTML = chips.length
+    ? chips.map(c => `<span class="fchip">${esc(c.t)}<button data-chip="${c.k}" data-v="${esc(c.v||'')}" title="Remove this filter">✕</button></span>`).join('')
+      + `<button class="btn sm ghost" id="fClear">Clear all</button>`
+    : '';
+  el.classList.toggle('on', chips.length > 0);
+  $$('[data-chip]', el).forEach(b => b.onclick = () => {
+    const k = b.dataset.chip;
+    if(k === 'q'){ SHEET.q = ''; const q = $('#sQ'); if(q) q.value = ''; }
+    else if(k === 'status') SHEET.status.delete(b.dataset.v);
+    else if(k === 'phone'){ SHEET.phoneOnly = false; const c = $('#sPhone'); if(c) c.checked = false; }
+    else if(k === 'sort'){ SHEET.sortStatus = true; const c = $('#sSort'); if(c) c.checked = true; store.set('sheetSort', true); }
+    renderSheet(); paintSheetNumbers();
+  });
+  const clr = $('#fClear');
+  if(clr) clr.onclick = () => {
+    SHEET.q = ''; SHEET.status.clear(); SHEET.phoneOnly = false;
+    const q = $('#sQ'); if(q) q.value = '';
+    const p = $('#sPhone'); if(p) p.checked = false;
+    bindSeg(); renderSheet(); paintSheetNumbers();
+  };
+}
+function renderMini(){
+  const el = $('#sMini'); if(!el) return;
+  const c = statusCounts();
+  el.innerHTML = `<span><b>${num(K.buyers)}</b> replies</span><i>·</i>` +
+    `<span>Int <b>${num(c.Interested||0)}</b></span><i>·</i>` +
+    `<span>Und <b>${num(c.Undecided||0)}</b></span><i>·</i>` +
+    `<span>NI <b>${num((c['Not Interested']||0)+(c['Remove Me']||0))}</b></span><i>·</i>` +
+    `<span>NS <b>${num(c['No Status']||0)}</b></span>`;
+}
+
+/* the property you are scrolling through stays visible */
+let sgRaf = null;
+function updateStickyGroup(){
+  sgRaf = null;
+  const sc = $('#sheetScroll'), sg = $('#sg'), txt = $('#sgTxt'), top = $('#toTop');
+  if(!sc || !sg) return;
+  if(top) top.classList.toggle('on', sc.scrollTop > 420);
+  const hr = 44;
+  let best = null;
+  const banners = sc.querySelectorAll('tr.sb');
+  for(let i = 0; i < banners.length; i++){
+    const tr = banners[i];
+    const y = tr.getBoundingClientRect().top - sc.getBoundingClientRect().top;
+    if(y <= hr) best = tr; else break;
+  }
+  if(!best || !best.classList.contains('open')){
+    sg.classList.remove('on'); return;
+  }
+  const y = best.getBoundingClientRect().top - sc.getBoundingClientRect().top;
+  if(y > -2){ sg.classList.remove('on'); return; }      // the banner itself is still visible
+  txt.textContent = best.querySelector('.addr').textContent;
+  sg.classList.add('on');
+}
+function bindSheetScroll(){
+  const sc = $('#sheetScroll'); if(!sc) return;
+  if(sc.dataset.bound) return;
+  sc.dataset.bound = '1';
+  sc.addEventListener('scroll', () => {
+    if(sgRaf) return;
+    sgRaf = requestAnimationFrame(updateStickyGroup);
+  }, {passive:true});
+  const top = $('#toTop');
+  if(top) top.onclick = () => sc.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* 3D tilt on the KPI cards */
+function tiltKpis(){
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  $$('.kpi').forEach(card => {
+    if(card.dataset.tilt) return;
+    card.dataset.tilt = '1';
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - .5;
+      const py = (e.clientY - r.top) / r.height - .5;
+      card.style.transform = `perspective(820px) rotateY(${(px*6).toFixed(2)}deg) rotateX(${(-py*6).toFixed(2)}deg) translateZ(6px)`;
+      card.classList.add('tilt');
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = ''; card.classList.remove('tilt');
+    });
+  });
+}
+
+/* keyboard: arrows walk the grid, Enter edits, Esc leaves full screen */
+const CELL_KEYS = ['status','source','offer','earnest','type','name','phone','email','last','notes'];
+let ACTIVE = null;            // {bk, k} — survives the re-render after an edit
+function setActiveCell(td){
+  if(!td){ ACTIVE = null; applyActiveCell(); return; }
+  ACTIVE = {bk: td.closest('tr.br') ? td.closest('tr.br').dataset.bk : null, k: td.dataset.k};
+  applyActiveCell();
+  td.scrollIntoView({block:'nearest', inline:'nearest'});
+}
+function applyActiveCell(){
+  $$('#sBody td.active').forEach(x => x.classList.remove('active'));
+  if(!ACTIVE) return;
+  const tr = document.querySelector(`#sBody tr.br[data-bk="${String(ACTIVE.bk).replace(/"/g,'\\"')}"]`);
+  const td = tr && tr.querySelector(`td[data-k="${ACTIVE.k}"]`);
+  if(td) td.classList.add('active');
+}
+function moveCell(dx, dy){
+  if(!ACTIVE) return;
+  const rows = Array.from(document.querySelectorAll('#sBody tr.br'));
+  const idx = rows.findIndex(r => r.dataset.bk === ACTIVE.bk);
+  if(idx < 0) return;
+  if(dy){
+    const next = rows[idx + dy]; if(!next) return;
+    const td = next.querySelector(`td[data-k="${ACTIVE.k}"]`);
+    if(td) setActiveCell(td);
+  } else if(dx){
+    const i = CELL_KEYS.indexOf(ACTIVE.k) + dx;
+    if(i < 0 || i >= CELL_KEYS.length) return;
+    const td = rows[idx].querySelector(`td[data-k="${CELL_KEYS[i]}"]`);
+    if(td) setActiveCell(td);
+  }
+}
+document.addEventListener('keydown', e => {
+  // never hijack keys that belong to a field (the cell editor removes itself on Enter,
+  // which would otherwise re-open the editor on the cell we just saved)
+  const t = e.target;
+  if(t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+  if(!$('#sBody')) return;
+  if(e.key === 'Escape' && isFull() && !$('#modal.on')){ setFull(false); return; }
+  if(['ArrowDown','ArrowUp','ArrowLeft','ArrowRight'].includes(e.key)){
+    if(!ACTIVE) return;
+    e.preventDefault();
+    if(e.key === 'ArrowDown') moveCell(0, 1);
+    else if(e.key === 'ArrowUp') moveCell(0, -1);
+    else if(e.key === 'ArrowRight') moveCell(1, 0);
+    else moveCell(-1, 0);
+  } else if(e.key === 'Enter' && ACTIVE){
+    const tr = document.querySelector(`#sBody tr.br[data-bk="${String(ACTIVE.bk).replace(/"/g,'\\"')}"]`);
+    const td = tr && tr.querySelector(`td[data-k="${ACTIVE.k}"]`);
+    if(td){ e.preventDefault(); startEdit(td); }
+  }
+});
+/* numbers roll up when the screen opens — a small, professional touch */
+function countUp(el, dur){
+  if(!el) return;
+  const target = Number(String(el.textContent).replace(/[^\d]/g,'')) || 0;
+  if(!target || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const t0 = performance.now(); dur = dur || 450;
+  el.textContent = '0';
+  const step = now => {
+    const k = Math.min(1, (now - t0) / dur);
+    const e = 1 - Math.pow(1 - k, 3);
+    el.textContent = Math.round(target * e).toLocaleString('en-US');
+    if(k < 1) requestAnimationFrame(step); else el.textContent = target.toLocaleString('en-US');
+  };
+  requestAnimationFrame(step);
+}
+function animateKpis(){ ['kBuyers','kInt','kUnd','kNo','kNoSt'].forEach(id => countUp($('#' + id))); }
+const segHtml = counts => `<button data-st="__all" class="on">All <span class="n">${num(K.buyers)}</span></button>
+  ${BUYER_STATUSES.map(st => `<button data-st="${st}"${SHEET.status.has(st)?' class="on"':''}>${st}<span class="n">${num(counts[st]||0)}</span></button>`).join('')}`;
+
+function viewBuyerList(){
+  const counts = statusCounts();
+  Object.keys(EDITS.ov || {}).forEach(() => {});
+  if(!SHEET.open.size){
+    // start with the 3 busiest available properties open
+    D.props.filter(p => p.status === 'Available').slice(0,3).forEach(p => SHEET.open.add(String(p.row)));
+  }
+  const statuses = ['Interested','Undecided','Not Interested','Remove Me','No Status'];
+
+  $('#view').innerHTML = `
+  <div class="kpis">
+    <div class="kpi"><div class="k">Buyer replies</div><div class="v" id="kBuyers">${num(K.buyers)}</div>
+      <div class="d">across <span id="kProps">${num(counts_props())}</span> properties</div></div>
+    <div class="kpi g"><div class="k">Interested</div><div class="v" id="kInt">${num(counts.Interested||0)}</div></div>
+    <div class="kpi a"><div class="k">Undecided</div><div class="v" id="kUnd">${num(counts.Undecided||0)}</div></div>
+    <div class="kpi r"><div class="k">Not interested / remove</div>
+      <div class="v" id="kNo">${num((counts['Not Interested']||0)+(counts['Remove Me']||0))}</div></div>
+    <div class="kpi p"><div class="k">No status</div><div class="v" id="kNoSt">${num(counts['No Status']||0)}</div>
+      <div class="d">needs classifying</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:0">
+    <div class="sheet-tools">
+      <div class="seg" id="sf">${segHtml(counts)}</div>
+      <label class="tgl"><input type="checkbox" id="sPhone"> With phone only</label>
+      <label class="tgl"><input type="checkbox" id="sCompact"> Compact</label>
+      <label class="tgl" title="Interested first, then Undecided, Not interested last">
+        <input type="checkbox" id="sSort"${SHEET.sortStatus ? ' checked' : ''}> Status order</label>
+      <div class="spacer"></div>
+      <span class="mini" id="sMini"></span>
+      <span class="count" id="sCount"></span>
+      <button class="btn sm" id="sExpand">${IC.expand} Expand all</button>
+      <button class="btn sm" id="sAdd">${IC.plus} Add buyer</button>
+      <button class="btn sm pri" id="sAddProp">${IC.plus} New lead</button>
+      <button class="btn sm" id="sCsv">${IC.download} CSV</button>
+      <input class="input" id="sQ" placeholder="Search name, phone, email…" style="width:210px;min-width:150px">
+    </div>
+    <div class="sheet-tools sub">
+      <span class="note"><i></i> Editing is on — click any cell to change it</span>
+      <span class="saved-pill${editsCount()?' dirty':''}" id="sSaved">${editsCount() ? editsCount()+' local change'+(editsCount()===1?'':'s') : 'nothing changed yet'}</span>
+      <div class="spacer"></div>
+      <select class="input jump" id="sJump" title="Jump to a property">
+        <option value="">Jump to a property…</option>
+        ${D.props.filter(pr => pr.buyers.length || pr._new)     // only groups that are in the sheet
+          .slice().sort((x,y) => String(x.address).localeCompare(String(y.address)))
+          .map(pr => `<option value="${esc(String(pr.row))}">${esc(pr.address)} (${pr.buyers.length})</option>`).join('')}
+      </select>
+      <button class="btn sm act" id="sFull">${IC.maximize} Full screen</button>
+      <button class="btn sm act" id="sSync">${IC.cloud} Sheet sync</button>
+      <span class="sep"></span>
+      <button class="btn sm" id="sExport">${IC.download} Export edits</button>
+      <button class="btn sm" id="sImport">${IC.upload} Import</button>
+      <button class="btn sm" id="sBake">${IC.sheet} Download file with edits</button>
+      <button class="btn sm" id="sReset">${IC.trash} Undo all edits</button>
+    </div>
+    <div class="fchips" id="fchips"></div>
+    <div class="sheet-wrap">
+    <div class="sg" id="sg"><span class="d"></span><span id="sgTxt"></span></div>
+    <button id="toTop" title="Back to the top of the sheet">↑ Top</button>
+    <div class="sheet-scroll" id="sheetScroll">
+      <table class="sheet">
+        <colgroup>${SHEET_COLS.map(c=>`<col style="width:${c.w}px">`).join('')}</colgroup>
+        <thead><tr>${SHEET_COLS.map(c=>`<th class="${c.k}">${c.t}</th>`).join('')}</tr></thead>
+        <tbody id="sBody"></tbody>
+      </table>
+    </div>
+    </div>
+    <div class="sheet-legend">
+      <span><i style="background:#b6d7a8"></i> Interested</span>
+      <span><i style="background:#ffe599"></i> Undecided</span>
+      <span><i style="background:#e06666"></i> Not Interested</span>
+      <span><i style="background:#8e7cc3"></i> Remove Me</span>
+      <span><i style="background:#e8ecf1"></i> No Status</span>
+      <span style="margin-left:auto">Order inside every property: Interested → Undecided → No status → Remove me → Not interested last</span>
+    </div>
+  </div>`;
+
+  // wire toolbar
+  bindSeg();
+  $('#sPhone').onchange = e => { SHEET.phoneOnly = e.target.checked; renderSheet(); };
+  $('#sCompact').onchange = e => {
+    SHEET.compact = e.target.checked;
+    document.querySelector('table.sheet').classList.toggle('compact', SHEET.compact);
+    renderSheet();
+  };
+  $('#sSort').onchange = e => {
+    SHEET.sortStatus = e.target.checked; store.set('sheetSort', SHEET.sortStatus); renderSheet();
+  };
+  $('#sQ').oninput = e => { SHEET.q = e.target.value.trim().toLowerCase(); renderSheet(); };
+  $('#sExpand').onclick = e => {
+    const allOpen = D.props.every(p => SHEET.open.has(String(p.row)));
+    SHEET.open = allOpen ? new Set() : new Set(D.props.map(p => String(p.row)));
+    e.currentTarget.innerHTML = (allOpen ? IC.expand+' Expand all' : IC.expand+' Collapse all');
+    renderSheet();
+  };
+  $('#sCsv').onclick = () => {
+    const head = ['Property','Buyer Status','Source','Offer','Earnest','Type','Name',
+                  'Phone Number','Email','Last Touch Date','Notes / Last Update','Contact ID'];
+    const out = [head];
+    D.props.forEach(p => sheetRows(p).filter(b => !b._blank).forEach(b => out.push([
+      p.address, b.status, b.source, b.offerTxt || b.offer || '', b.earnest, b.type,
+      b.name, b.phone, b.email, b.last, (b.notes||'').replace(/\s+/g,' '), b.id])));
+    const csv = out.map(r => r.map(v => `"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    downloadFile(`dispo-buyer-list-${K.checked}.csv`, csv);
+  };
+  $('#sAdd').onclick = () => openBuyerForm();
+  $('#sAddProp').onclick = () => openLeadForm();
+  $('#sExport').onclick = exportEdits;
+  $('#sImport').onclick = importEdits;
+  $('#sBake').onclick = downloadBaked;
+  $('#sReset').onclick = resetEdits;
+  $('#sFull').onclick = () => setFull(!isFull());
+  $('#sSync').onclick = () => syncPanel();
+  $('#sJump').onchange = e => { const v = e.target.value; if(v){ jumpTo(v); e.target.value = ''; } };
+  renderSheet();
+  animateKpis();
+  tiltKpis();
+  bindSheetScroll();
+  if(store.get('sheetFull', false)) setFull(true); else setFull(false);
+  renderMini();
+  updateStickyGroup();
+  syncBadge();
+  if(SYNC.url && SYNC.auto && !SYNC.state) setTimeout(() => syncPull(false), 900);
+}
+
+function bindSeg(){
+  $$('#sf button').forEach(b => b.onclick = () => {
+    const st = b.dataset.st;
+    if(st === '__all'){ SHEET.status.clear(); }
+    else { SHEET.status.has(st) ? SHEET.status.delete(st) : SHEET.status.add(st); }
+    $$('#sf button').forEach(x => x.classList.toggle('on',
+      x.dataset.st === '__all' ? SHEET.status.size === 0 : SHEET.status.has(x.dataset.st)));
+    renderSheet();
+  });
+}
+function renderSeg(){ const el = $('#sf'); if(el){ el.innerHTML = segHtml(statusCounts()); bindSeg(); } }
+function paintSheetNumbers(){
+  const c = statusCounts();
+  const set = (id, v) => { const el = $('#'+id); if(el) el.textContent = v; };
+  set('kBuyers', num(K.buyers)); set('kInt', num(c.Interested||0)); set('kUnd', num(c.Undecided||0));
+  set('kNo', num((c['Not Interested']||0)+(c['Remove Me']||0))); set('kNoSt', num(c['No Status']||0));
+  set('kProps', num(counts_props()));
+  renderSeg();
+  renderChips();
+  renderMini();
+  syncBadge();
+  const sp = $('#sSaved');
+  if(sp){
+    const n = editsCount();
+    sp.textContent = n ? n+' local change'+(n===1?'':'s') : 'nothing changed yet';
+    sp.classList.toggle('dirty', n > 0);
+    if(n > (sp.dataset.n ? Number(sp.dataset.n) : n)){
+      sp.classList.remove('bump'); void sp.offsetWidth; sp.classList.add('bump');
+    }
+    sp.dataset.n = n;
+  }
+}
+
+function sheetRowHtml(b, rn, anim, delay, mode, dups){
+  const ec = k => 'ed' + (b._edited && EDITS.ov[b._k] && EDITS.ov[b._k][k] !== undefined ? ' edited' : '');
+  const dot = (b._new && !b._blank) ? '<i class="dot-new" title="row added in this app"></i>' : '';
+  const nameCell = b._blank ? '<span class="bhint">type here</span>' : (dot + esc(b.name||'—'));
+  const animCls = anim ? (mode === 'flip' ? ' anim-flip' : ' anim-in') : '';
+  const dup = k => (dups && dups[k]) ? ' dup' : '';
+  const animStyle = (anim && delay) ? ` style="animation-delay:${delay}ms"` : '';
+  return `<tr class="br ${STATUS_CLASS[b.status]||'s-NoStatus'} ${b.repeat?'repeat':''} ${b._new?'isnew':''} ${b._edited?'isedited':''} ${b._blank?'isblank':''}${animCls}" data-bk="${esc(b._k)}"${animStyle}>
+    <td class="rn">${rn}</td>
+    <td class="${ec('status')} st" data-k="status">${esc(b._blank ? 'No Status' : b.status)}</td>
+    <td class="${ec('source')}${dup('source')}" data-k="source" title="${esc(b.source)}">${esc(b.source)}</td>
+    <td class="${ec('offer')} num" data-k="offer" title="${esc(b.offerTxt||'')}">${b.offer?money(b.offer):esc(b.offerTxt||'')}</td>
+    <td class="${ec('earnest')}" data-k="earnest">${esc(b.earnest||'')}</td>
+    <td class="${ec('type')}${dup('type')}" data-k="type">${esc(b.type||'')}</td>
+    <td class="${ec('name')} nm" data-k="name" data-rows="${b.rows}">${nameCell}</td>
+    <td class="${ec('phone')} tel" data-k="phone">${esc(b.phone||'')}</td>
+    <td class="${ec('email')} em" data-k="email" title="${esc(b.email)}">${esc(b.email||'')}</td>
+    <td class="${ec('last')} num" data-k="last">${esc(b.last||'')}</td>
+    <td class="${ec('notes')} nt" data-k="notes" title="${esc(b.notes)}">${esc(cleanNote(b.notes).slice(0,150))}${cleanNote(b.notes).length>150?'…':''}</td>
+    <td class="cid">${esc(b.id)}</td>
+    <td class="act"><div class="grp">
+      ${b.raw?`<a class="btn wa" href="${waLink(b.raw)}" target="_blank" rel="noopener" title="WhatsApp">${IC.wa}</a>`:''}
+      ${b.raw?`<button class="btn" data-copy="${esc(b.phone)}" title="Copy phone">${IC.copy}</button>`:''}
+      ${b.email?`<a class="btn" href="mailto:${esc(b.email)}" title="Email">${IC.mail}</a>`:''}
+      <button class="btn del" data-del="${esc(b._k)}" title="Delete this row">${IC.trash}</button>
+    </div></td>
+  </tr>`;
+}
+
+function renderSheet(){
+  const body = $('#sBody'); if(!body) return;
+  const html = [];
+  let shown = 0, rn = 0;
+  D.props.forEach(p => {
+    const rows = sheetRows(p);
+    if(!rows.length && !p._new) return;   // brand-new properties still show their banner
+    shown += rows.length;
+    // a search or a status filter opens the groups that still have matches,
+    // so a hit is never hidden behind a collapsed property
+    const open = SHEET.open.has(String(p.row)) ||
+                 ((!!SHEET.q || SHEET.status.size > 0) && rows.length > 0);
+    const cls = p.status === 'Sold' ? 'sold' : p.status === 'Pending' ? 'pending'
+      : p.status === 'Available' ? '' : 'off';
+    const isNewLead = p._new && SHEET.animKey === String(p.row);
+    html.push(`<tr class="sb ${cls} ${open?'open':''}${isNewLead ? ' anim-new' : ''}" data-g="${p.row}">
+      <td colspan="${SHEET_COLS.length}"><div class="bwrap">
+        <span class="caret">${IC.caret}</span>
+        <span class="addr">${esc(p.address)}</span>
+        <span class="pill">${esc(p.status)}</span>
+        ${p.price?`<span class="pill">${money(p.price)}</span>`:''}
+        <span class="pill warn">${rows.length} ${rows.length===1?'reply':'replies'}</span>
+        ${p.interested?`<span class="pill">${p.interested} interested</span>`:''}
+        ${p._new?`<span class="pill">new</span>`:''}
+        <button class="addb" data-addprop="${esc(String(p.row))}">${IC.plus} Add buyer</button>
+        <span class="num">${open?'−':'+'}</span>
+      </div></td></tr>`);
+    if(!open) return;
+    const blanks = blankRowsOf(p);
+    const showBlanks = !SHEET.q && !SHEET.status.size;   // placeholders only in the unfiltered sheet
+    if(!rows.length && !blanks.length){
+      html.push(`<tr class="more"><td colspan="${SHEET_COLS.length}">
+        <button class="btn sm" data-addprop="${esc(String(p.row))}">${IC.plus} Add the first buyer row</button>
+      </td></tr>`);
+      return;
+    }
+    const anim = SHEET.animKey === String(p.row);
+    let ai = 0;
+    const rowAnim = () => (anim && ai < 22) ? [(ai++) * 16] : [0];
+    const slice = rows.slice(0, SHEET.limit);
+    let prevSrc = '', prevTyp = '';
+    const dupOf = b => ({
+      source: !!b.source && b.source === prevSrc,
+      type: !!b.type && b.type === prevTyp,
+    });
+    slice.forEach(b => {
+      rn++;
+      const [d] = rowAnim();
+      const dups = !SHEET.compact ? dupOf(b) : null;
+      html.push(sheetRowHtml(b, rn, anim, d, isNewLead ? 'flip' : 'in', dups));
+      prevSrc = b.source || prevSrc; prevTyp = b.type || prevTyp;
+    });
+    if(rows.length > SHEET.limit){
+      html.push(`<tr class="more"><td colspan="${SHEET_COLS.length}">
+        + ${rows.length - SHEET.limit} more replies — open this property in Properties to see everyone
+      </td></tr>`);
+    }
+    if(showBlanks){
+      blanks.forEach(b => { rn++; const [d] = rowAnim(); html.push(sheetRowHtml(b, rn, anim, d, isNewLead ? 'flip' : 'in', null)); });
+      html.push(`<tr class="addrow"><td colspan="${SHEET_COLS.length}">
+        <button class="btn sm" data-newrow="${esc(String(p.row))}" data-n="1">${IC.plus} Add a blank row</button>
+        <button class="btn sm" data-newrow="${esc(String(p.row))}" data-n="5">${IC.plus} 5 rows</button>
+      </td></tr>`);
+    }
+  });
+  body.innerHTML = html.join('') || `<tr><td colspan="${SHEET_COLS.length}">
+    <div class="empty"><b>No replies match</b>Clear the search or the status filter.</div></td></tr>`;
+  const cnt = $('#sCount');
+  if(cnt) cnt.textContent = `${num(shown)} replies · ${num(D.props.filter(p=>sheetRows(p).length).length)} properties`;
+  $$('tr.sb', body).forEach(tr => tr.querySelector('.bwrap').onclick = () => {
+    const row = tr.dataset.g;
+    if(SHEET.open.has(row)){ SHEET.open.delete(row); SHEET.animKey = null; }
+    else { SHEET.open.add(row); SHEET.animKey = row; }
+    renderSheet();
+  });
+  $$('#sBody .addb').forEach(b => b.onclick = e => { e.stopPropagation(); openBuyerForm(b.dataset.addprop); });
+  $$('#sBody td.ed').forEach(td => {
+    td.onclick = () => { setActiveCell(td); startEdit(td); };
+    td.addEventListener('focus', () => setActiveCell(td));
+  });
+  updateStickyGroup();
+  $$('#sBody [data-del]').forEach(b => b.onclick = e => { e.stopPropagation(); deleteRow(b.dataset.del); });
+  $$('#sBody [data-newrow]').forEach(b => b.onclick = e => {
+    e.stopPropagation(); addBlankRows(b.dataset.newrow, Number(b.dataset.n) || 1);
+  });
+  SHEET.animKey = null;                     // one-shot: the next render is static
+  renderChips();
+  applyActiveCell();
+  bindCopy();
+}
+
+/* ══════════════════ MESSAGES ══════════════════ */
+function viewMsgs(){
+  const single = D.followups.filter(f => f.n === 1);
+  const combined = D.followups.filter(f => f.n > 1);
+  const groups = {};
+  single.forEach(f => { (groups[f.props[0]] = groups[f.props[0]] || []).push(f); });
+  const order = Object.entries(groups).sort((a,b) => b[1].length - a[1].length);
+  const sent = D.followups.filter(f => SENT.has(f.raw)).length;
+  const msgList = D.followups.map(f => [f.name, f.phone, f.status, f.days+'d', f.n, f.props.join(' | '), f.msg]);
+
+  $('#view').innerHTML = `
+  <div class="kpis">
+    <div class="kpi"><div class="k">Total messages</div><div class="v">${num(K.followups)}</div>
+      <div class="d">one per person</div></div>
+    <div class="kpi g"><div class="k">Property groups</div><div class="v">${order.length}</div>
+      <div class="d">single-property buyers</div></div>
+    <div class="kpi p"><div class="k">Combined messages</div><div class="v">${num(K.fuCombined)}</div>
+      <div class="d">asked about 2+ properties</div></div>
+    <div class="kpi a"><div class="k">Sent so far</div><div class="v">${sent}</div>
+      <div class="d">${K.followups ? Math.round(sent/K.followups*100) : 0}% of the list</div></div>
+  </div>
+
+  <div class="note" style="margin-bottom:16px">
+    ${IC.warn}<div><b>Availability comes from the live site, not the sheet.</b>
+    ${num(K.siteAvailable)} listings verified available on elevatereg.com on ${esc(K.checked)}.
+    Only Interested + Undecided buyers with a phone number whose last touch is 7+ days ago are included.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Combined messages <span class="num">${combined.length}</span></h3>
+      <span class="hint">every property they asked about is inside one message</span>
+      <div class="right">
+        <button class="btn sm" id="expAll">Expand all</button>
+        <button class="btn sm" id="dlCsv">${IC.download} Export CSV</button>
+      </div></div>
+    <div class="card-b">${combined.length ? combined.map(f => msgBlock(f)).join('')
+      : '<div class="empty">No combined messages</div>'}</div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>By property <span class="num">${order.length}</span></h3>
+      <span class="hint">click a banner to open its call list</span>
+      <div class="right"><input class="input" id="mq" placeholder="Filter by address…" style="width:230px"></div></div>
+    <div class="card-b" id="groups">${order.map(([addr, list]) => `
+      <div class="fgroup" data-addr="${esc(addr.toLowerCase())}">
+        <div class="fg-h"><span class="caret">${IC.caret}</span>
+          <span>${esc(addr)}</span>
+          <span class="chip" style="background:#fff;color:${'#0b6b3c'}">Available</span>
+          <span class="n">${list.length} to call</span></div>
+        <div class="fg-body">${list.map(f => msgBlock(f)).join('')}</div>
+      </div>`).join('')}</div>
+  </div>`;
+
+  $$('.fg-h').forEach(h => h.onclick = () => h.parentElement.classList.toggle('open'));
+  $('#expAll').onclick = e => {
+    const gs = $$('.fgroup');
+    const allOpen = gs.every(g => g.classList.contains('open'));
+    gs.forEach(g => g.classList.toggle('open', !allOpen));
+    e.currentTarget.textContent = allOpen ? 'Expand all' : 'Collapse all';
+  };
+  $('#dlCsv').onclick = () => {
+    const head = 'Name,Phone,Status,Days cold,Properties,Message\n';
+    const body = msgList.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    downloadFile(`dispo-messages-${K.checked}.csv`, head + body);
+  };
+  $('#mq').oninput = e => {
+    const q = e.target.value.toLowerCase();
+    $$('.fgroup').forEach(g => g.style.display = g.dataset.addr.includes(q) ? '' : 'none');
+  };
+  bindCopy();
+}
+function msgBlock(f, opt={}){
+  const isSent = SENT.has(f.raw);
+  const gone = f.gone && f.gone.length
+    ? `<div class="body" style="border:1px solid #f4c9c9;background:#fdf3f3;color:#8b2020;margin-top:6px">
+         ${'⚠'} No longer available on the site: ${esc(f.gone.join(', '))}</div>` : '';
+  return `<div class="msg ${isSent?'sent':''}">
+    <div class="mh"><b>${esc(f.name)}</b><span class="tel">${esc(f.phone)}</span>
+      ${buyerChip(f.status)} ${daysChip(f.days)}
+      ${f.n>1?`<span class="chip p">${f.n} properties</span>`:''}
+      ${isSent?`<span class="chip g">${'✓'} sent</span>`:''}</div>
+    <div class="body">${esc(f.msg)}</div>${gone}
+    <div class="macts">
+      <a class="btn sm wa" href="${waLink(f.raw)}" target="_blank" rel="noopener">${IC.wa} WhatsApp</a>
+      <button class="btn sm" data-copy="${esc(f.msg)}">${IC.copy} Copy message</button>
+      <button class="btn sm" data-copy="${esc(f.phone)}">Copy number</button>
+      ${!opt.today?`<button class="btn sm" data-openprop="${esc(f.props[0])}">${IC.home} Property</button>`:''}
+      <button class="btn sm ${isSent?'':'ghost'}" data-sent="${esc(f.raw)}"
+        title="Toggle sent">${IC.check} ${isSent?'Undo':'Mark sent'}</button>
+    </div></div>`;
+}
+
+/* ══════════════════ CONTACTS ══════════════════ */
+let cQ = '', cLimit = 60, cSort = 'interested', cOnly = 'all';
+function viewContacts(){
+  $('#view').innerHTML = `
+  <div class="kpis">
+    <div class="kpi"><div class="k">People</div><div class="v">${num(K.contacts)}</div></div>
+    <div class="kpi g"><div class="k">Reachable by phone</div><div class="v">${num(K.contactsWithPhone)}</div></div>
+    <div class="kpi p"><div class="k">On 2+ properties</div><div class="v">${num(K.repeatPeople)}</div></div>
+    <div class="kpi r"><div class="k">Rows with no phone</div><div class="v">${num(K.noPhone)}</div>
+      <div class="d">in the source sheet</div></div>
+  </div>
+  <div class="card">
+    <div class="card-h">
+      <div class="seg" id="cf">
+        ${[['all','All'],['phone','Has phone'],['repeat','2+ properties'],['email','Email only']]
+          .map(([k,t])=>`<button data-cf="${k}" class="${k===cOnly?'on':''}">${t}</button>`).join('')}
+      </div>
+      <div class="right"><input class="input" id="cq" placeholder="Name, phone, email, city…" style="width:250px"></div>
+    </div>
+    <div class="card-b tight"><div class="t-scroll"><table>
+      <thead><tr>
+        <th data-sort="name">Person <span class="ar">↕</span></th>
+        <th>Phone</th><th>Email</th>
+        <th class="c" data-sort="interested">Interested <span class="ar">↕</span></th>
+        <th class="c" data-sort="props">Properties <span class="ar">↕</span></th>
+        <th>Source</th><th data-sort="last">Last touch <span class="ar">↕</span></th><th></th>
+      </tr></thead><tbody id="cBody"></tbody></table></div>
+      <div class="card-b" style="text-align:center;border-top:1px solid var(--line)">
+        <button class="btn" id="cMore">Show more</button></div></div>
+  </div>`;
+  $$('#cf button').forEach(b => b.onclick = () => {
+    cOnly = b.dataset.cf; cLimit = 60;
+    $$('#cf button').forEach(x => x.classList.toggle('on', x === b));
+    renderContacts();
+  });
+  $$('th[data-sort]').forEach(th => th.onclick = () => {
+    cSort = th.dataset.sort; renderContacts();
+  });
+  $('#cq').oninput = e => { cQ = e.target.value.toLowerCase(); cLimit = 60; renderContacts(); };
+  $('#cMore').onclick = () => { cLimit += 120; renderContacts(); };
+  renderContacts();
+}
+function renderContacts(){
+  const body = $('#cBody'); if(!body) return;
+  let list = D.contacts.filter(c => {
+    if(cQ && !(c.name+' '+c.phone+' '+c.email+' '+c.city).toLowerCase().includes(cQ)) return false;
+    if(cOnly === 'phone') return !!c.raw;
+    if(cOnly === 'repeat') return c.props > 1;
+    if(cOnly === 'email') return !c.raw && !!c.email;
+    return true;
+  });
+  const cmp = {
+    name: (a,b) => (a.name||'').localeCompare(b.name||''),
+    interested: (a,b) => b.interested - a.interested,
+    props: (a,b) => b.props - a.props,
+    last: (a,b) => String(b.last).localeCompare(String(a.last)),
+  }[cSort];
+  list = list.slice().sort(cmp);
+  body.innerHTML = list.slice(0, cLimit).map((c,i) => `<tr>
+    <td class="who"><b>${esc(c.name||'No name')}</b><span>${esc(c.id)}${c.city?' · '+esc(c.city):''}</span></td>
+    <td class="mono">${esc(c.phone||'—')}</td>
+    <td style="font-size:11.5px;color:#5b6b7e">${esc(c.email||'')}</td>
+    <td class="c">${c.interested?`<span class="chip b">${c.interested}</span>`:'—'}</td>
+    <td class="c num">${c.props}</td>
+    <td style="font-size:11.5px;color:#5b6b7e">${esc(c.sources)}</td>
+    <td class="num">${esc(fmtDate(c.last))}</td>
+    <td>${c.raw?`<a class="btn sm wa" href="${waLink(c.raw)}" target="_blank" rel="noopener"
+        aria-label="WhatsApp">${IC.wa}</a>`:''}</td></tr>`).join('')
+    || `<tr><td colspan="8"><div class="empty"><b>No matches</b>Adjust the filters above.</div></td></tr>`;
+  const more = $('#cMore');
+  more.style.display = list.length > cLimit ? '' : 'none';
+  more.textContent = `Show more (${list.length - cLimit} left)`;
+}
+
+/* ══════════════════ LIVE SITE ══════════════════ */
+let sQ = '', sLimit = 48, sStatus = 'all';
+function viewSite(){
+  $('#view').innerHTML = `
+  <div class="kpis">
+    <div class="kpi"><div class="k">Listings</div><div class="v">${num(K.siteTotal)}</div></div>
+    <div class="kpi g"><div class="k">Available</div><div class="v">${num(K.siteAvailable)}</div>
+      <div class="d">no badge on the card</div></div>
+    <div class="kpi a"><div class="k">Pending</div><div class="v">${num(K.sitePending)}</div></div>
+    <div class="kpi r"><div class="k">Sold</div><div class="v">${num(K.siteSold)}</div></div>
+  </div>
+  <div class="card">
+    <div class="card-h">
+      <div class="seg" id="sf">
+        ${[['all','All',K.siteTotal],['Available','Available',K.siteAvailable],
+           ['Pending','Pending',K.sitePending],['Sold','Sold',K.siteSold]]
+          .map(([k,t,n])=>`<button data-sf="${k}" class="${k===sStatus?'on':''}">${t}<span class="n">${num(n)}</span></button>`).join('')}
+      </div>
+      <span class="hint">snapshot ${esc(K.checked)}</span>
+      <div class="right"><input class="input" id="sq" placeholder="Address, city, ZIP…" style="width:230px"></div>
+    </div>
+    <div class="card-b"><div class="pgrid" id="sgrid"></div></div>
+    <div class="card-b" style="text-align:center;border-top:1px solid var(--line)">
+      <button class="btn" id="sMore">Show more</button></div>
+  </div>`;
+  $$('#sf button').forEach(b => b.onclick = () => {
+    sStatus = b.dataset.sf; sLimit = 48;
+    $$('#sf button').forEach(x => x.classList.toggle('on', x === b));
+    renderSite();
+  });
+  $('#sq').oninput = e => { sQ = e.target.value.toLowerCase(); sLimit = 48; renderSite(); };
+  $('#sMore').onclick = () => { sLimit += 96; renderSite(); };
+  renderSite();
+}
+function renderSite(){
+  const grid = $('#sgrid'); if(!grid) return;
+  const list = D.inventory.filter(s =>
+    (sStatus === 'all' || s.status === sStatus) &&
+    (!sQ || (s.address+' '+s.status).toLowerCase().includes(sQ)));
+  grid.innerHTML = list.slice(0, sLimit).map(s => `
+    <div class="pcard">
+      <div class="ph">
+        <div class="thumb">${s.img ? `<img src="${esc(s.img)}" alt="" loading="lazy">`
+          : `<span style="opacity:.4">${SVG('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.8V21h14V9.8"/>',26)}</span>`}</div>
+        <div class="phb">
+          <div class="ad">${esc(s.address)}</div>
+          <div class="meta">${money(s.price)}<span class="sep">·</span>${esc(s.beds||'?')} bd
+            <span class="sep">·</span>${esc(s.sqft||'?')} sqft</div>
+          <div class="chips">${statusChip(s.status)}
+            ${s.inSheet?`<span class="chip b">in sheet</span>`:`<span class="chip p">not in sheet</span>`}</div>
+        </div>
+      </div>
+      <div class="foot">
+        <a class="btn sm" href="${esc(s.link)}" target="_blank" rel="noopener">${IC.ext} Open</a>
+        <button class="btn sm" data-copy="${esc(s.address)}">${IC.copy} Copy</button>
+        <span class="right">#${esc(s.id||'')}</span>
+      </div>
+    </div>`).join('') || `<div class="empty" style="grid-column:1/-1"><b>No matches</b>Try another filter.</div>`;
+  const more = $('#sMore');
+  more.style.display = list.length > sLimit ? '' : 'none';
+  more.textContent = `Show more (${list.length - sLimit} left)`;
+  bindCopy();
+}
+
+/* ══════════════════ CLOSED / SYNC / ISSUES ══════════════════ */
+function viewClosed(){
+  $('#view').innerHTML = tableCard({
+    title:'Closed deals', count:D.closed.length, id:'cl',
+    hint:'from the original sheet', placeholder:'Property, buyer, LLC, email…',
+    head:['Property','Buyer','LLC / Company','Phone','Email'],
+    rows: D.closed.map(c => [esc(c.address), esc(c.name), esc(c.llc),
+      `<span class="mono">${esc(c.phone||'')}</span>`, `<span style="font-size:11.5px">${esc(c.email||'')}</span>`]),
+  });
+  bindTableFilter('cl');
+}
+function viewSync(){
+  $('#view').innerHTML = `
+  <div class="note" style="margin-bottom:16px">${IC.warn}
+    <div><b>${D.changes.length} live listings are not in your sheet.</b>
+    They exist on elevatereg.com but have no property block or buyer list.
+    Add them, then run the refresh to pull them into the workbook.</div></div>` +
+  tableCard({title:'Live but missing from the sheet', count:D.changes.length, id:'sy',
+    hint:'checked '+esc(K.checked), placeholder:'Address…',
+    head:['Listing','Site status','Price',''],
+    rows: D.changes.map(c => [esc(c.address), statusChip(c.detail), `<span class="num">${esc(c.price||'—')}</span>`,
+      `<a class="btn sm" href="${esc(c.link)}" target="_blank" rel="noopener">${IC.ext} Open</a>`])});
+  bindTableFilter('sy');
+}
+function viewIssues(){
+  $('#view').innerHTML = tableCard({
+    title:'Data issues', count:D.issues.length, id:'is',
+    hint:'rows worth cleaning in the source sheet', placeholder:'Filter…',
+    head:['Row','Issue','Tab'],
+    rows: D.issues.map(i => [`<span class="num">${esc(i.row)}</span>`, esc(i.what),
+      `<span class="chip k">${esc(i.tab)}</span>`]),
+  });
+  bindTableFilter('is');
+}
+function tableCard(o){
+  return `<div class="card">
+    <div class="card-h"><h3>${o.title} <span class="num">${num(o.count)}</span></h3>
+      <span class="hint">${o.hint||''}</span>
+      <div class="right"><input class="input" id="${o.id}q" placeholder="${o.placeholder}" style="width:250px"></div></div>
+    <div class="card-b tight"><div class="t-scroll"><table>
+      <thead><tr>${o.head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody id="${o.id}Body">${o.rows.slice(0,400).map(r =>
+        `<tr>${r.map((c,i)=>`<td class="${i===0?'':'num'}">${c}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table></div>
+    ${o.rows.length>400?`<div class="card-b" style="text-align:center;border-top:1px solid var(--line)">
+      <span class="hint">Showing the first 400 of ${num(o.rows.length)}</span></div>`:''}
+  </div>`;
+}
+function bindTableFilter(id){
+  const input = $('#'+id+'q'), body = $('#'+id+'Body');
+  if(!input || !body) return;
+  input.oninput = e => {
+    const q = e.target.value.toLowerCase();
+    $$('tr', body).forEach(tr => tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none');
+  };
+}
+
+/* ══════════════════ global search ══════════════════ */
+const searchInput = $('#q'), resultsBox = $('#results');
+let selIdx = -1, lastResults = [];
+function doSearch(q){
+  q = q.trim().toLowerCase();
+  if(!q){ resultsBox.hidden = true; lastResults = []; return; }
+  const props = D.props.filter(p => (p.address+' '+p.city+' '+p.zip).toLowerCase().includes(q)).slice(0,5);
+  const people = D.contacts.filter(c => (c.name+' '+c.phone+' '+c.email).toLowerCase().includes(q)).slice(0,5);
+  const msgs = D.followups.filter(f => (f.name+' '+f.raw+' '+f.props.join(' ')).toLowerCase().includes(q)).slice(0,4);
+  lastResults = [
+    ...props.map(p => ({type:'prop', label:p.address, sub:`${p.city} ${p.zip} · ${money(p.price)} · ${p.n} buyers`, data:p})),
+    ...people.map(c => ({type:'person', label:c.name||c.phone, sub:`${c.phone||'no phone'} · ${c.props} properties`, data:c})),
+    ...msgs.map(f => ({type:'msg', label:f.name, sub:`${f.phone} · ${f.days}d cold`, data:f})),
+  ];
+  selIdx = -1;
+  if(!lastResults.length){
+    resultsBox.innerHTML = `<div class="empty">No results for “${esc(q)}”</div>`;
+    resultsBox.hidden = false; return;
+  }
+  let html = '', group = '';
+  lastResults.forEach((r,i) => {
+    const g = r.type === 'prop' ? 'Properties' : r.type === 'person' ? 'Buyers' : 'Follow-ups';
+    if(g !== group){ html += `<div class="grp">${g}</div>`; group = g; }
+    html += `<div class="row" data-i="${i}"><div><div class="t">${esc(r.label)}</div>
+      <div class="s">${esc(r.sub)}</div></div></div>`;
+  });
+  resultsBox.innerHTML = html;
+  resultsBox.hidden = false;
+  $$('.row', resultsBox).forEach(el => el.onclick = () => pickResult(+el.dataset.i));
+}
+function pickResult(i){
+  const r = lastResults[i]; if(!r) return;
+  resultsBox.hidden = true; searchInput.blur();
+  if(r.type === 'prop') openProp(r.data.row);
+  else if(r.type === 'person'){ go('contacts'); setTimeout(()=>{ $('#cq').value = r.data.name; cQ = r.data.name.toLowerCase(); renderContacts(); }, 90); }
+  else { go('messages'); setTimeout(()=>toast('Found in messages: '+r.data.name), 120); }
+}
+searchInput.addEventListener('input', e => doSearch(e.target.value));
+searchInput.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){ resultsBox.hidden = true; searchInput.blur(); }
+  if(!lastResults.length) return;
+  if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+    e.preventDefault();
+    selIdx = (selIdx + (e.key === 'ArrowDown' ? 1 : -1) + lastResults.length) % lastResults.length;
+    $$('.row', resultsBox).forEach((el,i) => el.classList.toggle('sel', i === selIdx));
+  }
+  if(e.key === 'Enter'){ e.preventDefault(); pickResult(selIdx < 0 ? 0 : selIdx); }
+});
+document.addEventListener('click', e => {
+  if(!e.target.closest('.search')) resultsBox.hidden = true;
+});
+document.addEventListener('keydown', e => {
+  if(e.key === '/' && document.activeElement !== searchInput){ e.preventDefault(); searchInput.focus(); }
+});
+
+/* ══════════════════ shell wiring ══════════════════ */
+function bindCopy(){
+  $$('[data-copy]').forEach(b => b.onclick = () => copy(b.dataset.copy));
+  bindSent();
+}
+/* Mark sent / Undo — must be wired on every screen that shows a message,
+   Today included (it was only bound on the Messages page) */
+function bindSent(){
+  $$('[data-sent]').forEach(b => b.onclick = () => toggleSent(b.dataset.sent));
+}
+function toggleSent(raw){
+  if(!raw) return;
+  if(SENT.has(raw)) SENT.delete(raw); else SENT.add(raw);
+  saveSent();
+  if(CURRENT === 'messages' || CURRENT === 'today') route();
+  else route();
+  toast(SENT.has(raw) ? 'Marked as sent' : 'Marked as not sent');
+}
+$('#menuBtn').onclick = () => {
+  $('#side').classList.add('open'); $('#scrim').classList.add('on');
+};
+$('#scrim').onclick = closeSide;
+
+const synced = $('#synced');
+if(synced) synced.textContent = (K.checked || '').split('-').reverse().join('/') || '—';
+
+/* ── reading elevatereg.com straight from the browser ──────────────────────
+   The site answers every origin (its CORS header echoes whatever Origin it is
+   given), so a hosted copy of this app can walk the listings itself — no
+   middleman. From a file:// page the browser sends `Origin: null`, which the
+   site does not accept, so the Apps Script bridge is used instead. */
+const SITE_ORIGIN = 'https://www.elevatereg.com';
+
+function parseSitePage(html){
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const out = [];
+  doc.querySelectorAll('article.property').forEach(a => {
+    const txt = el => (el ? el.textContent.trim() : '');
+    const title = txt(a.querySelector('.property-title'));
+    if(!title) return;
+    const lead = txt(a.querySelector('li.lead b'));
+    const badge = txt(a.querySelector('.badge'));
+    const nums = [...a.querySelectorAll('ul.property-details li')].map(txt);
+    const num = rx => { const hit = nums.find(x => rx.test(x)); return hit ? hit.match(rx)[1] : ''; };
+    const id = (a.className.match(/post-(\d+)/) || [])[1] || title;
+    out.push({
+      id: String(id), address: title, price: lead,
+      beds: num(/([\d.]+)\s*bd/i), baths: num(/([\d.]+)\s*ba/i),
+      sqft: num(/([\d,]+)\s*sqft/i).replace(/,/g, ''),
+      badge: badge, terms: txt(a.querySelector('.property-type-heading')),
+      link: (a.querySelector('a[href]') || {}).href || '',
+      img: (a.querySelector('img') || {}).src || '',
+    });
+  });
+  return out;
+}
+
+async function fetchSiteDirect(onStep){
+  const rows = [], seen = new Set();
+  let failures = 0;
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  /* the CDN throttles bursts, so pages are read one at a time, with retries */
+  for(const status of ['available', 'unavailable']){
+    let page = 1, maxPage = 1, misses = 0;
+    while(page <= maxPage && page <= 60){
+      const url = SITE_ORIGIN + '/property/' + (page > 1 ? `page/${page}/` : '') + '?status=' + status;
+      let html = '';
+      for(let attempt = 0; attempt < 3 && !html; attempt++){
+        try{
+          const res = await fetch(url, {mode: 'cors', credentials: 'omit'});
+          if(res.ok) html = await res.text();
+          else if(res.status === 404) break;
+        }catch(e){ failures++; }
+        if(!html) await wait(700 * (attempt + 1));
+      }
+      if(!html || html.indexOf('<article') < 0){
+        if(++misses >= 3) break;
+        page++;
+        await wait(400);
+        continue;
+      }
+      misses = 0;
+      (html.match(/\/property\/page\/(\d+)\//g) || []).forEach(x => {
+        const n = Number(String(x).replace(/[^\d]/g, ''));
+        if(n > maxPage) maxPage = n;
+      });
+      parseSitePage(html).forEach(c => {
+        if(seen.has(c.id)) return;
+        seen.add(c.id);
+        c.status = status === 'unavailable' ? (c.badge || 'Sold') : (c.badge || 'Available');
+        c.available = c.status === 'Available';
+        rows.push(c);
+      });
+      if(onStep) onStep(rows.length, status, page, maxPage);
+      page++;
+      await wait(350);
+    }
+  }
+  if(rows.length < 50) throw new Error('The site is throttling this browser — try again in a minute');
+  const by = s => rows.filter(r => r.status === s).length;
+  return {listings: rows, count: rows.length, available: by('Available'),
+          pending: by('Pending'), sold: by('Sold'), checked: nowIso().slice(0, 10), failures};
+}
+
+/* the bridge (Apps Script) does the same walk server side, with a 6 h cache */
+async function fetchSiteViaBridge(force){
+  if(!SYNC.url) throw new Error('No bridge connected');
+  const r = await jsonp(SYNC.url, {action: 'site', force: force ? 1 : ''}, 300000);
+  if(!r || !r.ok) throw new Error((r && r.error) || 'The bridge did not answer');
+  if(!r.listings || !r.listings.length) throw new Error('The bridge returned no listings');
+  return {listings: r.listings, count: r.count, available: r.available,
+          pending: r.pending, sold: r.sold, checked: (r.checked || nowIso()).slice(0, 10)};
+}
+
+/* try the browser first, then the bridge — whichever manages to read the site */
+async function refreshSite(force, onStep){
+  let snap = null, why = null;
+  if(location.protocol !== 'file:'){          // a file:// page has no origin the site accepts
+    try{ snap = await fetchSiteDirect(onStep); }
+    catch(e){ why = e; }
+  }
+  if(!snap){
+    try{ snap = await fetchSiteViaBridge(force); }
+    catch(e){ why = why || e; }
+  }
+  if(!snap) throw why || new Error('The site could not be read');
+  store.set(SITE_KEY, {snap, at: nowIso()});
+  applyLive(snap);
+  return snap;
+}
+function siteAge(){
+  const at = SITE_STORE && SITE_STORE.at ? new Date(SITE_STORE.at).getTime() : 0;
+  return at ? Date.now() - at : Infinity;
+}
+const refreshBtn = $('#refreshBtn');
+if(refreshBtn) refreshBtn.onclick = async () => {
+  const original = refreshBtn.textContent;
+  refreshBtn.disabled = true; refreshBtn.textContent = 'Checking elevatereg.com…';
+  try{
+    const snap = await refreshSite(true);
+    refreshBtn.disabled = false; refreshBtn.textContent = original;
+    toast(`Site: ${snap.available} available · ${snap.pending} pending · ${snap.sold} sold · ${snap.count} listings`);
+  }catch(err){
+    refreshBtn.disabled = false; refreshBtn.textContent = original;
+    if(location.protocol !== 'file:'){
+      try{
+        const res = await fetch('/api/refresh', {headers:{'accept':'application/json'}});
+        const snap = await res.json();
+        if(snap && !snap.error){ applyLive(snap); toast(`Live: ${snap.available} available · ${snap.count} listings`); return; }
+      }catch(e){}
+    }
+    toast('Site refresh failed — showing the last snapshot (' + err.message + ')');
+  }
+};
+/* a background refresh when the copy on this device is getting old */
+const SITE_TRIED = 'dispo:siteTried';
+async function refreshSiteIfStale(){
+  if(siteAge() < SITE_MAX_AGE) return;
+  // do not hammer the site on every load when it is throttling us
+  const tried = Number(store.get(SITE_TRIED, 0)) || 0;
+  if(Date.now() - tried < 20 * 60000) return;
+  if(location.protocol === 'file:' && !SYNC.url) return;
+  store.set(SITE_TRIED, Date.now());
+  try{
+    const snap = await refreshSite(false);
+    toast(`Properties refreshed from elevatereg.com · ${snap.count} listings`);
+  }catch(e){}
+}
+
+D0 = JSON.parse(JSON.stringify(D.props));
+/* the site wins over the sheet: last stored snapshot, else the one baked in */
+if(SITE_STORE && SITE_STORE.snap) applyLive(SITE_STORE.snap, true);
+applySheetEdits();
+renderNav();
+route();
+setTimeout(refreshSiteIfStale, 2500);
+</script>
+</body>
+</html>
