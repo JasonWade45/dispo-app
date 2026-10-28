@@ -2727,7 +2727,7 @@ function parseSitePage(html){
 }
 
 async function fetchSiteDirect(onStep){
-  const rows = [], seen = new Set();
+  const rows = [], seen = new Set(), bad = [];
   let failures = 0;
   const wait = ms => new Promise(r => setTimeout(r, ms));
   /* the CDN throttles bursts, so pages are read one at a time, with retries */
@@ -2745,6 +2745,7 @@ async function fetchSiteDirect(onStep){
         if(!html) await wait(700 * (attempt + 1));
       }
       if(!html || html.indexOf('<article') < 0){
+        bad.push({status, page});          // retried once the walk is over
         if(++misses >= 3) break;
         page++;
         await wait(400);
@@ -2767,10 +2768,41 @@ async function fetchSiteDirect(onStep){
       await wait(350);
     }
   }
+  /* a page that came back empty is almost always a throttle blip, not a page
+     with no homes — read it once more before settling for a shorter list */
+  const grab = async (status, page) => {
+    const url = SITE_ORIGIN + '/property/' + (page > 1 ? `page/${page}/` : '') + '?status=' + status;
+    for(let attempt = 0; attempt < 4; attempt++){
+      try{
+        const res = await fetch(url, {mode: 'cors', credentials: 'omit'});
+        if(res.ok){
+          const html = await res.text();
+          if(html.indexOf('<article') > -1){
+            parseSitePage(html).forEach(c => {
+              if(seen.has(c.id)) return;
+              seen.add(c.id);
+              c.status = status === 'unavailable' ? (c.badge || 'Sold') : (c.badge || 'Available');
+              c.available = c.status === 'Available';
+              rows.push(c);
+            });
+            return true;
+          }
+        }
+      }catch(e){ failures++; }
+      await wait(900 * (attempt + 1));
+    }
+    return false;
+  };
+  let mended = 0;
+  for(const b of bad){
+    await wait(500);
+    if(await grab(b.status, b.page)) mended++;
+  }
   if(rows.length < 50) throw new Error('The site is throttling this browser — try again in a minute');
   const by = s => rows.filter(r => r.status === s).length;
   return {listings: rows, count: rows.length, available: by('Available'),
-          pending: by('Pending'), sold: by('Sold'), checked: nowIso().slice(0, 10), failures};
+          pending: by('Pending'), sold: by('Sold'), checked: nowIso().slice(0, 10),
+          failures, mended, short: bad.length - mended};
 }
 
 /* the bridge (Apps Script) does the same walk server side, with a 6 h cache */
@@ -2795,6 +2827,12 @@ async function refreshSite(force, onStep){
     catch(e){ why = why || e; }
   }
   if(!snap) throw why || new Error('The site could not be read');
+  /* a read that lost a whole page is a throttle artefact, not news — keep the
+     snapshot we already trust instead of hiding a dozen homes */
+  const known = (SITE_STORE && SITE_STORE.snap && SITE_STORE.snap.count) ||
+                (window.__SITE_SNAPSHOT__ && window.__SITE_SNAPSHOT__.count) || 0;
+  if(known && snap.count < known - 12)
+    throw new Error(`read only ${snap.count} of ~${known} listings — keeping the previous snapshot`);
   store.set(SITE_KEY, {snap, at: nowIso()});
   applyLive(snap);
   return snap;
