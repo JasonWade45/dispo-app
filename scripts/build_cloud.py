@@ -76,57 +76,98 @@ GATE = r"""
 <script>
 (function(){
   var ENC = __ENC__;
-  var KEY = 'dispo:pass';
+  var KEY = 'dispo:pass', LOCAL = 'dispo:sealed';
   var $ = function(s){ return document.querySelector(s); };
-  var err = function(m){ $('#lockErr').textContent = m || ''; };
-  function b64(s){
-    var bin = atob(s), out = new Uint8Array(bin.length);
-    for(var i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i);
-    return out;
-  }
+  var err = function(m){ var e = $('#lockErr'); if(e) e.textContent = m || ''; };
+  function b64d(s){ var bin = atob(s), out = new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i); return out; }
+  function b64e(u8){ var s='', c=0x8000;
+    for(var i=0;i<u8.length;i+=c) s += String.fromCharCode.apply(null, u8.subarray(i, i+c));
+    return btoa(s); }
   function inject(){
-    var src = document.getElementById('appcode').textContent;
     var el = document.createElement('script');
-    el.textContent = src;
+    el.textContent = document.getElementById('appcode').textContent;
     document.body.appendChild(el);
   }
-  async function open(pass){
+  async function derive(pass, salt, iter){
     var base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass),
                  'PBKDF2', false, ['deriveKey']);
-    var key = await crypto.subtle.deriveKey(
-      {name:'PBKDF2', salt:b64(ENC.salt), iterations:ENC.it, hash:'SHA-256'},
-      base, {name:'AES-GCM', length:256}, false, ['decrypt']);
-    var buf = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64(ENC.iv)}, key, b64(ENC.ct));
-    var text;
-    if(ENC.gz && typeof DecompressionStream === 'function'){
-      text = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
-    } else {
-      text = new TextDecoder().decode(buf);
+    return crypto.subtle.deriveKey(
+      {name:'PBKDF2', salt:b64d(salt), iterations:iter, hash:'SHA-256'},
+      base, {name:'AES-GCM', length:256}, false, ['decrypt','encrypt']);
+  }
+  async function gunzip(buf){
+    if(typeof DecompressionStream === 'function'){
+      return new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
     }
-    return JSON.parse(text);
+    return new TextDecoder().decode(buf);
+  }
+  async function gzip(text){
+    if(typeof CompressionStream === 'function'){
+      var cs = new CompressionStream('gzip');
+      var w = cs.writable.getWriter();
+      w.write(new TextEncoder().encode(text)); w.close();
+      return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+    }
+    return new TextEncoder().encode(text);
+  }
+  async function openWith(pass, blob){
+    var key = await derive(pass, blob.salt, blob.it || 320000);
+    var buf = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64d(blob.iv)}, key, b64d(blob.ct));
+    var text = blob.gz ? await gunzip(buf) : new TextDecoder().decode(buf);
+    return text;
+  }
+  function localBlob(){
+    try{ var raw = localStorage.getItem(LOCAL); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
   }
   var busy = false;
   async function unlock(pass){
     if(busy) return; busy = true;
     var go = $('#lockGo'); go.disabled = true; var was = go.textContent; go.textContent = 'Opening…';
     err('');
-    try{
-      var data = await open(pass);
-      window.DISPO_DATA = data;
-      try{ localStorage.setItem(KEY, $('#lockRemember').checked ? pass : ''); }catch(e){}
-      document.getElementById('lock').remove();
-      document.body.classList.remove('locked');
-      inject();
-    }catch(e){
-      err(/passcode|OperationError|DataError/i.test(String(e)) ? 'That passcode is not right.' : 'Could not open the file: ' + e.message);
+    var candidates = [];
+    var mine = localBlob(); if(mine) candidates.push(mine);
+    candidates.push(ENC);
+    var text = null, lastErr = null;
+    for(var i=0;i<candidates.length && text===null;i++){
+      try{ text = await openWith(pass, candidates[i]); }catch(e){ lastErr = e; }
+    }
+    if(text === null){
+      err(/passcode|OperationError|DataError/i.test(String(lastErr)) ? 'That passcode is not right.' : 'Could not open the file: ' + (lastErr && lastErr.message));
       try{ localStorage.removeItem(KEY); }catch(_){}
       go.disabled = false; go.textContent = was;
-      var i = $('#lockPass'); i.value = ''; i.focus();
+      var inp = $('#lockPass'); inp.value = ''; inp.focus();
+      busy = false; return;
     }
+    var data = JSON.parse(text);
+    window.__DISPO_RAW__ = text;         // pristine payload, for re-sealing
+    window.DISPO_DATA = data;
+    try{ localStorage.setItem(KEY, $('#lockRemember').checked ? pass : ''); }catch(e){}
+    var l = document.getElementById('lock'); if(l) l.remove();
+    document.body.classList.remove('locked');
+    inject();
     busy = false;
   }
-  document.body.classList.add('locked');
+  /* change the passcode: re-seal the pristine payload on this device */
+  window.__dispoChangePass = async function(newPass){
+    if(!window.__DISPO_RAW__) throw new Error('unlock first');
+    var gz = await gzip(window.__DISPO_RAW__);
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var ITER = 320000;
+    var key = await derive(newPass, b64e(salt), ITER);
+    var ct = await crypto.subtle.encrypt({name:'AES-GCM', iv:iv}, key, gz);
+    var blob = {v:1, it:ITER, gz:1, salt:b64e(salt), iv:b64e(iv), ct:b64e(new Uint8Array(ct))};
+    localStorage.setItem(LOCAL, JSON.stringify(blob));
+    localStorage.setItem(KEY, newPass);
+    return true;
+  };
+  window.__dispoLockNow = function(){
+    try{ localStorage.removeItem(KEY); }catch(e){}
+    location.reload();
+  };
   window.__dispoUnlock = unlock;
+  document.body.classList.add('locked');
   document.addEventListener('DOMContentLoaded', function(){
     $('#lockGo').addEventListener('click', function(){ unlock($('#lockPass').value); });
     $('#lockPass').addEventListener('keydown', function(e){
@@ -145,6 +186,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--pass', dest='password', required=True)
     ap.add_argument('--out', default=os.path.join(ROOT, 'site', 'index.html'))
+    ap.add_argument('--sync', default=os.environ.get('DISPO_SYNC_URL', ''))
     a = ap.parse_args()
 
     data = json.load(open(os.path.join(ROOT, 'data.json')))
@@ -156,6 +198,8 @@ def main():
 
     tmp = tempfile.mkdtemp()
     src, enc = os.path.join(tmp, 'payload.json'), os.path.join(tmp, 'payload.enc')
+    if a.sync:
+        data['_sync'] = a.sync
     json.dump(data, open(src, 'w'), ensure_ascii=False, separators=(',', ':'))
     node_js = os.path.join(tmp, 'enc.js')
     open(node_js, 'w').write(NODE_ENC)
